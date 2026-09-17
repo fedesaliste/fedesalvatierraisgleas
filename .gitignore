@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+.env.*
+.DS_Store
+# fuentes originales (186MB de PNG) — no van al repo
+obras/
+# derivados generados por `npm run ingest`
+public/obras/
