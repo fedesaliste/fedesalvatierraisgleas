@@ -26,6 +26,15 @@ export type Caos = {
   vuelco: () => void
   /** sacar una obra (se va como vino) */
   retirar: () => void
+  /** energía de scroll: sacude todo, proporcional a la velocidad */
+  sacudir: (v: number) => void
+  /** inclinar la gravedad (x en [-1,1]); y opcional */
+  inclinar: (x: number, y?: number) => void
+  /** el piso desaparece: todo cae */
+  abrirPiso: () => void
+  cerrarPiso: () => void
+  /** cuántas obras hay en escena */
+  count: () => number
   bodies: () => Matter.Body[]
 }
 
@@ -41,13 +50,19 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
 
   // paredes: piso + laterales. El techo queda abierto para que entren cosas.
   const wallOpts = { isStatic: true, friction: 0.6, restitution: 0.1 }
+  let pisoAbierto = false
   const makeWalls = () => [
-    Bodies.rectangle(W / 2, H + 60, W * 3, 120, wallOpts),
+    ...(pisoAbierto ? [] : [Bodies.rectangle(W / 2, H + 60, W * 3, 120, wallOpts)]),
     Bodies.rectangle(-60, H / 2, 120, H * 6, wallOpts),
     Bodies.rectangle(W + 60, H / 2, 120, H * 6, wallOpts),
   ]
   let walls = makeWalls()
   World.add(world, walls)
+  const rebuildWalls = () => {
+    World.remove(world, walls)
+    walls = makeWalls()
+    World.add(world, walls)
+  }
 
   const tags = new Map<number, Tag>()
   const used = new Set<string>()
@@ -204,16 +219,69 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
   const onResize = () => {
     W = container.clientWidth
     H = container.clientHeight
-    World.remove(world, walls)
-    walls = makeWalls()
-    World.add(world, walls)
+    rebuildWalls()
   }
+
+  const sacudir = (v: number) => {
+    const k = Math.min(Math.abs(v), 4000) / 4000 // 0..1
+    if (k < 0.03) return
+    for (const b of bodies()) {
+      if (!rng.chance(0.35 + k * 0.5)) continue
+      Body.applyForce(b, b.position, {
+        x: rng.range(-1, 1) * 0.05 * k * b.mass,
+        y: (v > 0 ? -1 : 0.4) * rng.range(0.04, 0.16) * k * b.mass,
+      })
+      Body.setAngularVelocity(b, b.angularVelocity + rng.range(-0.2, 0.2) * k)
+    }
+  }
+  const inclinar = (x: number, y = 0.9) => {
+    engine.gravity.x = Math.max(-1, Math.min(1, x))
+    engine.gravity.y = y
+  }
+  const abrirPiso = () => {
+    if (pisoAbierto) return
+    pisoAbierto = true
+    rebuildWalls()
+    engine.gravity.y = 1.6
+    for (const b of bodies()) Body.setAngularVelocity(b, rng.range(-0.3, 0.3))
+  }
+  const cerrarPiso = () => {
+    if (!pisoAbierto) return
+    pisoAbierto = false
+    rebuildWalls()
+    engine.gravity.y = 0.9
+  }
+
+  // el cursor empuja apenas lo que tiene cerca (sin agarrar)
+  let cursor: { x: number; y: number } | null = null
+  const onMove = (e: PointerEvent) => {
+    const r = container.getBoundingClientRect()
+    cursor = { x: e.clientX - r.left, y: e.clientY - r.top }
+  }
+  const onLeave = () => (cursor = null)
+  container.addEventListener('pointermove', onMove)
+  container.addEventListener('pointerleave', onLeave)
+  Events.on(engine, 'beforeUpdate', () => {
+    if (!cursor || mc.body) return
+    for (const b of bodies()) {
+      const dx = b.position.x - cursor.x
+      const dy = b.position.y - cursor.y
+      const d = Math.hypot(dx, dy)
+      const R = 90
+      if (d < R && d > 1) {
+        const f = ((R - d) / R) * 0.0009 * b.mass
+        Body.applyForce(b, b.position, { x: (dx / d) * f, y: (dy / d) * f - f * 0.6 })
+      }
+    }
+  })
   const ro = new ResizeObserver(onResize)
   ro.observe(container)
 
   return {
     destroy: () => {
       ro.disconnect()
+      container.removeEventListener('pointermove', onMove)
+      container.removeEventListener('pointerleave', onLeave)
       clearTimeout(vuelcoTimer)
       Runner.stop(runner)
       Events.off(engine, 'afterUpdate', sync)
@@ -226,6 +294,11 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
     impulso,
     vuelco,
     retirar,
+    sacudir,
+    inclinar,
+    abrirPiso,
+    cerrarPiso,
+    count: () => tags.size,
     bodies,
   }
 }

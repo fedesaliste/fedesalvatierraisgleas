@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-display: 'Anton', Impact, sans-serif;
-  --font-mono: 'Courier Prime', 'Courier New', monospace;
+  --font-display: 'Anton', 'Noto Sans JP', Impact, sans-serif;
+  --font-mono: 'Courier Prime', 'Noto Sans JP', 'Courier New', monospace;
   --color-papel: #efece4;
   --color-tinta: #141210;
 }
@@ -12,12 +12,12 @@
   --acento: #d0281e;
 }
 
+html {
+  scroll-behavior: auto;
+}
 html,
-body,
-#root {
-  height: 100%;
+body {
   margin: 0;
-  overflow: hidden;
   background: var(--color-papel);
   color: var(--color-tinta);
   font-family: var(--font-mono);
@@ -54,4 +54,25 @@ body,
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* sedimento: cada obra aterrizó un poco torcida */
+.sed-item {
+  will-change: transform;
+  cursor: pointer;
+}
+.sed-item img {
+  filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.16));
+}
+
+/* palabras del manifiesto */
+.palabra {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* Anton no tiene kana/kanji: en japonés el display cae a Noto Sans JP, que sí tiene peso 900 */
+:lang(ja) .font-display {
+  font-weight: 900;
+  letter-spacing: -0.02em;
 }

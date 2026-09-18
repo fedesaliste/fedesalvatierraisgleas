@@ -1,20 +1,4 @@
-/** Fragmentos que irrumpen solos en la pantalla. Se eligen al azar. */
-export const FRAGMENTOS = [
-  'el arte nace sin pedir permiso',
-  'no nace para satisfacer una necesidad',
-  'nace del impulso',
-  'lo que queda plasmado sin querer',
-  'el azar también firma',
-  'lo digital como perpetuidad de lo efímero',
-  'arte plástico digital',
-  'nada de esto fue planeado',
-  'esto también va a desaparecer',
-  'tocá, movélo, rompélo',
-  'cada visita es otra',
-  'no hay orden, hay acumulación',
-  'lo plástico es lo que se toca. lo digital, lo que queda.',
-] as const
-
+/** Datos fijos del artista (los textos traducibles viven en i18n/dict.ts). */
 export const BIO = {
   nombre: 'Federico Salvatierra Isgleas',
   origen: 'Uruguay',
