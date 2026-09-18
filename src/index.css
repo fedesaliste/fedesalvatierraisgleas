@@ -98,13 +98,56 @@ body {
   white-space: nowrap;
   cursor: pointer;
   z-index: 5500;
+  overflow: hidden;
+  isolation: isolate;
 }
-.boton-azar span {
+.boton-azar canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+.boton-azar-texto,
+.boton-azar-icono {
+  position: relative;
+  z-index: 1;
+}
+.boton-azar-texto .molde {
+  visibility: hidden;
+}
+.boton-azar-texto .letras {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: space-between;
+}
+.boton-azar-texto .letras span {
   display: inline-block;
+}
+.boton-azar-texto .glifo {
+  color: var(--color-tinta);
+  transform: translateY(-0.06em) rotate(8deg) scale(1.15);
+}
+.boton-azar-icono {
   animation: girar 6s linear infinite;
+}
+.boton-azar:hover .boton-azar-icono {
+  animation-duration: 0.7s;
+}
+.boton-azar:hover {
+  animation: temblar 0.12s linear infinite;
 }
 @keyframes girar {
   to {
     transform: rotate(360deg);
   }
+}
+@keyframes temblar {
+  0% { translate: 0 0; }
+  25% { translate: 1px -1px; }
+  50% { translate: -1px 1px; }
+  75% { translate: 1px 1px; }
+  100% { translate: 0 0; }
 }

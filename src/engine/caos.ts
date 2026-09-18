@@ -35,6 +35,8 @@ export type Caos = {
   cerrarPiso: () => void
   /** un elemento HTML cualquiera (ej. un botón) cae como un cuerpo más */
   agregarElemento: (el: HTMLElement, opts?: { density?: number; restitution?: number }) => Matter.Body
+  /** re-medir un elemento HTML y ajustar su cuerpo */
+  redimensionar: (body: Matter.Body) => void
   /** todo sale repelido del centro; resuelve cuando la escena quedó vacía */
   explotar: () => Promise<void>
   /** cuántas obras hay en escena */
@@ -180,8 +182,6 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
     el.classList.add('obra-body')
     const w = el.offsetWidth
     const h = el.offsetHeight
-    el.style.width = `${w}px`
-    el.style.height = `${h}px`
     const body = Bodies.rectangle(rng.range(W * 0.25, W * 0.75), -h * 3, w, h, {
       angle: rng.range(-0.5, 0.5),
       friction: 0.4,
@@ -195,6 +195,18 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
     tags.set(body.id, { el, w, h })
     World.add(world, body)
     return body
+  }
+
+  /** el elemento cambió de tamaño (ej. cambió el idioma): el cuerpo se adapta */
+  const redimensionar = (body: Matter.Body) => {
+    const t = tags.get(body.id)
+    if (!t) return
+    const w = t.el.offsetWidth
+    const h = t.el.offsetHeight
+    if (!w || !h || (w === t.w && h === t.h)) return
+    Body.scale(body, w / t.w, h / t.h)
+    t.w = w
+    t.h = h
   }
 
   let explotando = false
@@ -360,6 +372,7 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
     abrirPiso,
     cerrarPiso,
     agregarElemento,
+    redimensionar,
     explotar,
     count: () => [...tags.values()].filter((t) => t.obra).length,
     bodies,

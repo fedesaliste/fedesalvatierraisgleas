@@ -5,6 +5,7 @@ import { crearCaos, type Caos as CaosEngine } from '../engine/caos'
 import type { Rng } from '../engine/random'
 import { obras, type Obra } from '../lib/obras'
 import { useI18n } from '../i18n'
+import BotonAzar from '../components/BotonAzar'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -26,6 +27,7 @@ export default function Caos({ rng, onSelect, onOtroAzar, trigger }: Props) {
   const fragsRef = useRef(t.fragmentos)
   fragsRef.current = t.fragmentos
   const activo = useRef(true)
+  const botonBody = useRef<{ caos: CaosEngine; body: import('matter-js').Body } | null>(null)
 
   useEffect(() => {
     const el = ref.current!
@@ -47,7 +49,7 @@ export default function Caos({ rng, onSelect, onOtroAzar, trigger }: Props) {
     timers.push(
       window.setTimeout(() => {
         boton.style.visibility = 'visible'
-        caos.agregarElemento(boton, { density: 0.006, restitution: 0.5 })
+        botonBody.current = { caos, body: caos.agregarElemento(boton, { density: 0.006, restitution: 0.5 }) }
       }, t0 + rng.range(400, 1200)),
     )
     let down: { x: number; y: number; t: number } | null = null
@@ -112,6 +114,7 @@ export default function Caos({ rng, onSelect, onOtroAzar, trigger }: Props) {
       boton.removeEventListener('pointerdown', onDown)
       boton.removeEventListener('pointerup', onUp)
       st.kill()
+      botonBody.current = null
       caos.destroy()
       // el botón vuelve al DOM de React para la próxima ronda
       boton.style.cssText = ''
@@ -120,6 +123,15 @@ export default function Caos({ rng, onSelect, onOtroAzar, trigger }: Props) {
       ref.current?.appendChild(boton)
     }
   }, [rng, onSelect, onOtroAzar, trigger])
+
+  // cambió el idioma: el botón cambia de ancho y su cuerpo físico lo sigue
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      const b = botonBody.current
+      if (b) b.caos.redimensionar(b.body)
+    }, 50)
+    return () => clearTimeout(id)
+  }, [t.otroAzar])
 
   // un fragmento del manifiesto aparece en un lugar cualquiera y se va
   useEffect(() => {
@@ -146,16 +158,7 @@ export default function Caos({ rng, onSelect, onOtroAzar, trigger }: Props) {
 
   return (
     <div ref={ref} className="absolute inset-0 overflow-hidden touch-none">
-      <button
-        ref={botonRef}
-        type="button"
-        className="boton-azar"
-        style={{ visibility: 'hidden' }}
-        aria-label={t.otroAzar}
-      >
-        {t.otroAzar}
-        <span aria-hidden>↻</span>
-      </button>
+      <BotonAzar ref={botonRef} texto={t.otroAzar} rng={rng} />
       {frag && (
         <div
           ref={fragRef}
