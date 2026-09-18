@@ -4,6 +4,5 @@ dist
 .env.*
 .DS_Store
 # fuentes originales (186MB de PNG) — no van al repo
-obras/
-# derivados generados por `npm run ingest`
-public/obras/
+/obras/
+# derivados generados por `npm run ingest` — sí van al repo (Vercel los sirve desde public/)
