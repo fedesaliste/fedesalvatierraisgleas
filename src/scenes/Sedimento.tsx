@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { mulberry32, type Rng } from '../engine/random'
 import { obras, srcSet, src, years, type Obra } from '../lib/obras'
 import { useI18n } from '../i18n'
-
-gsap.registerPlugin(ScrollTrigger)
 
 type Props = { rng: Rng; onSelect: (o: Obra) => void }
 
@@ -34,31 +31,67 @@ export default function Sedimento({ rng, onSelect }: Props) {
     )
   }, [rng.seed])
 
+  // entrada: cada obra cae cuando entra a la vista. IntersectionObserver en vez de
+  // ScrollTrigger.batch porque las imágenes lazy corren el layout y los triggers
+  // quedaban desfasados para los años de más abajo.
   useEffect(() => {
     const root = ref.current!
-    const items = gsap.utils.toArray<HTMLElement>('.sed-item', root)
     const r = mulberry32(rng.seed ^ 0xa11)
-    const ctx = gsap.context(() => {
-      ScrollTrigger.batch(items, {
-        start: 'top 95%',
-        once: true,
-        onEnter: (batch) => {
-          gsap.fromTo(
-            batch,
-            { y: () => -r.range(180, 420), rotate: () => r.range(-40, 40), opacity: 0 },
-            {
-              y: 0,
-              rotate: (_i, el) => +(el as HTMLElement).dataset.rot!,
-              opacity: 1,
-              duration: () => r.range(0.7, 1.2),
-              ease: 'back.out(1.4)',
-              stagger: { each: 0.06, from: 'random' },
-            },
-          )
+    const pendientes = new Set<HTMLElement>()
+    let flush = 0
+    const caer = () => {
+      const batch = [...pendientes]
+      pendientes.clear()
+      if (!batch.length) return
+      gsap.fromTo(
+        batch,
+        { y: () => -r.range(180, 420), rotate: () => r.range(-40, 40), opacity: 0 },
+        {
+          y: 0,
+          rotate: (_i, el) => +(el as HTMLElement).dataset.rot!,
+          opacity: 1,
+          duration: () => r.range(0.7, 1.2),
+          ease: 'back.out(1.4)',
+          stagger: { each: 0.06, from: 'random' },
+          overwrite: true,
         },
-      })
-    }, root)
-    return () => ctx.revert()
+      )
+    }
+    const sinAnimar = new Set<HTMLElement>()
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue
+          io.unobserve(e.target)
+          sinAnimar.delete(e.target as HTMLElement)
+          pendientes.add(e.target as HTMLElement)
+        }
+        // agrupar los que entraron juntos para que caigan en cascada
+        clearTimeout(flush)
+        flush = window.setTimeout(caer, 40)
+      },
+      { rootMargin: '0px 0px 5% 0px' },
+    )
+    const todos = [...root.querySelectorAll<HTMLElement>('.sed-item')]
+    todos.forEach((el) => io.observe(el))
+
+    todos.forEach((el) => sinAnimar.add(el))
+    // si un salto de scroll dejó obras arriba sin haber pasado por la pantalla, mostrarlas sin más
+    const onScroll = () => {
+      for (const el of sinAnimar) {
+        if (el.getBoundingClientRect().bottom < 0) {
+          io.unobserve(el)
+          sinAnimar.delete(el)
+          gsap.set(el, { opacity: 1, y: 0, rotate: +el.dataset.rot! })
+        }
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      clearTimeout(flush)
+      io.disconnect()
+      window.removeEventListener('scroll', onScroll)
+    }
   }, [rng.seed])
 
   const nudge = (el: HTMLElement, base: number) => {
@@ -100,7 +133,11 @@ export default function Sedimento({ rng, onSelect }: Props) {
                     key={o.id}
                     className={`sed-item flex items-center justify-center ${d.span === 2 ? 'col-span-2 row-span-2' : ''}`}
                     data-rot={d.rot}
-                    style={{ transform: `rotate(${d.rot}deg) translate(${d.dx}px, ${d.dy}px)`, opacity: 0 }}
+                    style={{
+                      transform: `rotate(${d.rot}deg) translate(${d.dx}px, ${d.dy}px)`,
+                      opacity: 0,
+                      aspectRatio: o.ratio,
+                    }}
                     onPointerEnter={(e) => nudge(e.currentTarget, d.rot)}
                     onClick={() => onSelect(o)}
                   >
