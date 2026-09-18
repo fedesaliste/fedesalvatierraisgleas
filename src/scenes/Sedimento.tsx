@@ -57,6 +57,28 @@ export default function Sedimento({ rng, onSelect }: Props) {
         },
       )
     }
+    // agrupar los que entraron juntos para que caigan en cascada
+    const programar = () => {
+      clearTimeout(flush)
+      flush = window.setTimeout(caer, 40)
+    }
+    // no dejar caer una obra hasta que su imagen esté decodificada: si no,
+    // la imagen lazy aparece a medio cargar (cortada) mientras ya se ve
+    const encolar = (el: HTMLElement) => {
+      const img = el.querySelector('img')
+      const listo = () => {
+        pendientes.add(el)
+        programar()
+      }
+      if (!img || (img.complete && img.naturalWidth > 0)) return listo()
+      const p = img.complete ? Promise.resolve() : new Promise<void>((res) => {
+        img.addEventListener('load', () => res(), { once: true })
+        img.addEventListener('error', () => res(), { once: true })
+      })
+      p.then(() => img.decode().catch(() => {})).then(listo)
+      // de última, que caiga igual aunque la imagen no llegue
+      window.setTimeout(() => !pendientes.has(el) && gsap.getProperty(el, 'opacity') === 0 && listo(), 4000)
+    }
     const sinAnimar = new Set<HTMLElement>()
     const io = new IntersectionObserver(
       (entries) => {
@@ -64,13 +86,10 @@ export default function Sedimento({ rng, onSelect }: Props) {
           if (!e.isIntersecting) continue
           io.unobserve(e.target)
           sinAnimar.delete(e.target as HTMLElement)
-          pendientes.add(e.target as HTMLElement)
+          encolar(e.target as HTMLElement)
         }
-        // agrupar los que entraron juntos para que caigan en cascada
-        clearTimeout(flush)
-        flush = window.setTimeout(caer, 40)
       },
-      { rootMargin: '0px 0px 5% 0px' },
+      { rootMargin: '0px 0px 15% 0px' },
     )
     const todos = [...root.querySelectorAll<HTMLElement>('.sed-item')]
     todos.forEach((el) => io.observe(el))
@@ -131,7 +150,7 @@ export default function Sedimento({ rng, onSelect }: Props) {
                 return (
                   <figure
                     key={o.id}
-                    className={`sed-item flex items-center justify-center ${d.span === 2 ? 'col-span-2 row-span-2' : ''}`}
+                    className={`sed-item flex max-h-[60vh] items-center justify-center ${d.span === 2 ? 'col-span-2 row-span-2' : ''}`}
                     data-rot={d.rot}
                     style={{
                       transform: `rotate(${d.rot}deg) translate(${d.dx}px, ${d.dy}px)`,
@@ -147,7 +166,7 @@ export default function Sedimento({ rng, onSelect }: Props) {
                       sizes={d.span === 2 ? '(min-width:1280px) 40vw, 50vw' : '(min-width:1280px) 20vw, (min-width:640px) 33vw, 50vw'}
                       alt={o.title ?? `${t.obra} ${o.year}`}
                       loading="lazy"
-                      className="max-h-[60vh] w-full object-contain"
+                      className="h-full w-full object-contain"
                     />
                   </figure>
                 )
