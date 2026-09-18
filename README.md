@@ -15,4 +15,6 @@ npm run dev
 ## Obras
 Los originales viven en `obras/<año>/` (gitignored, ~6MB c/u). `npm run ingest` les saca el fondo blanco del estudio (flood-fill desde los bordes), genera WebP en 480/1024/1920 y escribe `src/data/obras.json`.
 
-`obras/portadas/` hoy es una copia idéntica de `2020/` y se ignora.
+`obras/portadas/` hoy es una copia idéntica de `2020/` y se ignora. `obras/_descartadas/` guarda obras sacadas del sitio (no se procesa).
+
+**Para sacar una obra**: borrá (o mové) el PNG original de `obras/<año>/` y corré `npm run ingest`; el script limpia los derivados y el JSON solo.

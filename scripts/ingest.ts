@@ -10,7 +10,7 @@
  *      npm run ingest -- --force (reprocesa todo)
  */
 import sharp from 'sharp'
-import { readdir, mkdir, writeFile, stat } from 'node:fs/promises'
+import { readdir, mkdir, writeFile, stat, unlink } from 'node:fs/promises'
 import { join, parse } from 'node:path'
 
 const SRC = 'obras'
@@ -165,7 +165,9 @@ async function main() {
     for (const file of files) {
       const id = `${year}-${slug(parse(file).name)}`
       const cached = byId.get(id)
-      if (cached && (await exists(join(OUT, String(year), `${id}-${SIZES[0]}.webp`)))) {
+      const derivadosOk =
+        cached && (await Promise.all(cached.sizes.map((sz) => exists(join(OUT, String(year), `${id}-${sz}.webp`))))).every(Boolean)
+      if (cached && derivadosOk) {
         obras.push(cached)
         continue
       }
@@ -175,6 +177,22 @@ async function main() {
       console.log(`${Date.now() - t}ms`)
     }
   }
+  // limpieza: derivados cuya fuente ya no existe (obra borrada de obras/<año>/)
+  const vivos = new Set(obras.map((o) => o.id))
+  let borrados = 0
+  for (const year of years) {
+    const dir = join(OUT, String(year))
+    if (!(await exists(dir))) continue
+    for (const f of await readdir(dir)) {
+      const id = f.replace(/-\d+\.webp$/, '')
+      if (!vivos.has(id)) {
+        await unlink(join(dir, f))
+        borrados++
+      }
+    }
+  }
+  if (borrados) console.log(`  limpiados ${borrados} derivados sin fuente`)
+
   await mkdir('src/data', { recursive: true })
   await writeFile(META, JSON.stringify(obras, null, 2))
   console.log(`\n${obras.length} obras -> ${META}`)
