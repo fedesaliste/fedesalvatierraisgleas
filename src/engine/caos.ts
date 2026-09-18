@@ -33,15 +33,19 @@ export type Caos = {
   /** el piso desaparece: todo cae */
   abrirPiso: () => void
   cerrarPiso: () => void
+  /** un elemento HTML cualquiera (ej. un botón) cae como un cuerpo más */
+  agregarElemento: (el: HTMLElement, opts?: { density?: number; restitution?: number }) => Matter.Body
+  /** todo sale repelido del centro; resuelve cuando la escena quedó vacía */
+  explotar: () => Promise<void>
   /** cuántas obras hay en escena */
   count: () => number
   bodies: () => Matter.Body[]
 }
 
-type Tag = { obra: Obra; el: HTMLDivElement; w: number; h: number }
+type Tag = { obra?: Obra; el: HTMLElement; w: number; h: number }
 
 export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Caos {
-  const engine = Engine.create({ gravity: { x: 0, y: 0.9 } })
+  const engine = Engine.create({ gravity: { x: 0, y: 1.15 } })
   engine.positionIterations = 8
   engine.velocityIterations = 6
   const world = engine.world
@@ -117,9 +121,9 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
     // desde arriba (mayoría), o desde un costado a toda velocidad
     const lado = rng.next()
     if (lado < 0.7) {
-      agregar(o, rng.range(W * 0.1, W * 0.9), -H * rng.range(0.2, 0.6), rng.range(-0.6, 0.6), {
+      agregar(o, rng.range(W * 0.1, W * 0.9), -H * rng.range(0.15, 0.5), rng.range(-0.6, 0.6), {
         x: rng.range(-3, 3),
-        y: rng.range(0, 4),
+        y: rng.range(4, 12),
       })
     } else {
       const izq = lado < 0.85
@@ -131,9 +135,10 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
   }
 
   const bodies = () => Composite.allBodies(world).filter((b) => tags.has(b.id))
+  const cuerposObra = () => bodies().filter((b) => tags.get(b.id)!.obra)
 
   const impulso = () => {
-    const bs = bodies()
+    const bs = cuerposObra()
     if (!bs.length) return
     const b = rng.pick(bs)
     Body.applyForce(b, b.position, {
@@ -147,7 +152,7 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
   const vuelco = () => {
     engine.gravity.y = -0.9
     clearTimeout(vuelcoTimer)
-    vuelcoTimer = window.setTimeout(() => (engine.gravity.y = 0.9), rng.range(1500, 3500))
+    vuelcoTimer = window.setTimeout(() => (engine.gravity.y = 1.15), rng.range(1500, 3500))
   }
 
   const quitar = (b: Matter.Body) => {
@@ -155,12 +160,12 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
     if (!t) return
     t.el.remove()
     tags.delete(b.id)
-    used.delete(t.obra.id)
+    if (t.obra) used.delete(t.obra.id)
     World.remove(world, b)
   }
 
   const retirar = () => {
-    const bs = bodies()
+    const bs = cuerposObra()
     if (bs.length < 4) return
     const b = rng.pick(bs)
     // se va volando hacia arriba; cuando sale del viewport, se elimina
@@ -169,6 +174,59 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
     Body.setAngularVelocity(b, rng.range(-0.4, 0.4))
     ;(b as Matter.Body & { _saliendo?: boolean })._saliendo = true
   }
+
+  const agregarElemento: Caos['agregarElemento'] = (el, opts = {}) => {
+    container.appendChild(el)
+    el.classList.add('obra-body')
+    const w = el.offsetWidth
+    const h = el.offsetHeight
+    el.style.width = `${w}px`
+    el.style.height = `${h}px`
+    const body = Bodies.rectangle(rng.range(W * 0.25, W * 0.75), -h * 3, w, h, {
+      angle: rng.range(-0.5, 0.5),
+      friction: 0.4,
+      frictionAir: 0.01,
+      restitution: opts.restitution ?? 0.45,
+      density: opts.density ?? 0.004,
+      chamfer: { radius: 6 },
+    })
+    Body.setVelocity(body, { x: rng.range(-2, 2), y: rng.range(6, 12) })
+    Body.setAngularVelocity(body, rng.range(-0.15, 0.15))
+    tags.set(body.id, { el, w, h })
+    World.add(world, body)
+    return body
+  }
+
+  let explotando = false
+  const explotar = () =>
+    new Promise<void>((resolve) => {
+      explotando = true
+      // sin paredes, sin gravedad: todo se repele del centro y se va
+      World.remove(world, walls)
+      walls = []
+      engine.gravity.x = 0
+      engine.gravity.y = 0
+      const cx = W / 2
+      const cy = H / 2
+      for (const b of bodies()) {
+        const dx = b.position.x - cx
+        const dy = b.position.y - cy
+        const d = Math.max(Math.hypot(dx, dy), 40)
+        const k = (0.9 + rng.range(0, 0.6)) * b.mass * 0.11
+        Body.applyForce(b, b.position, { x: (dx / d) * k, y: (dy / d) * k })
+        Body.setAngularVelocity(b, rng.range(-0.6, 0.6))
+      }
+      const check = () => {
+        if (!bodies().length) return resolve()
+        window.setTimeout(check, 80)
+      }
+      window.setTimeout(check, 200)
+      // por las dudas, nunca más de 2.5s
+      window.setTimeout(() => {
+        for (const b of bodies()) quitar(b)
+        resolve()
+      }, 2500)
+    })
 
   // mouse: arrastrar, y click corto = seleccionar
   const mouse = Mouse.create(container)
@@ -197,7 +255,7 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
     const d = Math.hypot(e.body.position.x - downPos.x, e.body.position.y - downPos.y)
     if (dt < 250 && d < 6) {
       const t = tags.get(e.body.id)
-      if (t) onSelect?.(t.obra)
+      if (t?.obra) onSelect?.(t.obra)
     }
   })
 
@@ -208,7 +266,10 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
       const { x, y } = b.position
       t.el.style.transform = `translate3d(${x - t.w / 2}px, ${y - t.h / 2}px, 0) rotate(${b.angle}rad)`
       const s = (b as Matter.Body & { _saliendo?: boolean })._saliendo
-      if ((s && y < -t.h * 2) || y > H + t.h * 3 || x < -W || x > W * 2) quitar(b)
+      const fuera = explotando
+        ? x < -t.w || x > W + t.w || y < -t.h || y > H + t.h
+        : (s && y < -t.h * 2) || y > H + t.h * 3 || x < -W || x > W * 2
+      if (fuera) quitar(b)
     }
   }
   Events.on(engine, 'afterUpdate', sync)
@@ -234,7 +295,7 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
       Body.setAngularVelocity(b, b.angularVelocity + rng.range(-0.2, 0.2) * k)
     }
   }
-  const inclinar = (x: number, y = 0.9) => {
+  const inclinar = (x: number, y = 1.15) => {
     engine.gravity.x = Math.max(-1, Math.min(1, x))
     engine.gravity.y = y
   }
@@ -249,7 +310,7 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
     if (!pisoAbierto) return
     pisoAbierto = false
     rebuildWalls()
-    engine.gravity.y = 0.9
+    engine.gravity.y = 1.15
   }
 
   // el cursor empuja apenas lo que tiene cerca (sin agarrar)
@@ -298,7 +359,9 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
     inclinar,
     abrirPiso,
     cerrarPiso,
-    count: () => tags.size,
+    agregarElemento,
+    explotar,
+    count: () => [...tags.values()].filter((t) => t.obra).length,
     bodies,
   }
 }

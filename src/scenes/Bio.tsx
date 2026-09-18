@@ -8,7 +8,7 @@ export default function Bio({ rng }: { rng: Rng }) {
     <section className="relative z-10 flex min-h-[70vh] flex-col justify-between bg-papel px-4 py-24 md:px-10">
       <div className="grid gap-10 md:grid-cols-2">
         <div>
-          <h2 className="font-display text-[clamp(2.4rem,7vw,6rem)] leading-[0.9]">{BIO.nombre}</h2>
+          <h2 className="font-display text-[clamp(2.4rem,7vw,6rem)] uppercase leading-[0.9]">{BIO.nombre}</h2>
           <p className="mt-3 text-[11px] uppercase tracking-wider opacity-70">
             {t.roles} · {t.rotulo} · {t.origen}
           </p>

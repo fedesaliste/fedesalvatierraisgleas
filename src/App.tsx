@@ -11,10 +11,18 @@ import { BIO } from './data/manifiesto'
 import { I18nProvider, useI18n } from './i18n'
 
 function Sitio() {
+  const [seed, setSeed] = useState(seedFromUrl)
   const rng = useMemo(() => {
-    const r = mulberry32(seedFromUrl())
+    const r = mulberry32(seed)
     document.documentElement.style.setProperty('--acento', r.pick(ACENTOS))
     return r
+  }, [seed])
+  const onOtroAzar = useCallback(() => {
+    const nuevo = (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0
+    const url = new URL(location.href)
+    url.searchParams.set('seed', String(nuevo))
+    history.replaceState(null, '', url)
+    setSeed(nuevo)
   }, [])
   const { t } = useI18n()
   const [sel, setSel] = useState<Obra | null>(null)
@@ -29,10 +37,10 @@ function Sitio() {
       {/* CAOS: 300vh de scroll durante los cuales el mundo se sacude y al final se cae */}
       <section ref={caosSection} className="relative h-[300vh]">
         <div className="sticky top-0 h-screen overflow-hidden">
-          <Caos rng={rng} onSelect={onSelect} trigger={caosSection} />
+          <Caos rng={rng} onSelect={onSelect} onOtroAzar={onOtroAzar} trigger={caosSection} />
 
           <header className="pointer-events-none absolute left-4 top-4 z-[6000] select-none text-[11px] uppercase leading-tight tracking-wider md:left-6 md:top-5">
-            <h1 className="font-display text-[clamp(1.3rem,3.2vw,2.6rem)] normal-case leading-[0.9] tracking-normal">
+            <h1 className="font-display text-[clamp(1.3rem,3.2vw,2.6rem)] uppercase leading-[0.9] tracking-normal">
               {BIO.nombre}
             </h1>
             <p className="mt-1 opacity-70">

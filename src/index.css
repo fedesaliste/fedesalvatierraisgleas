@@ -76,3 +76,35 @@ body {
   font-weight: 900;
   letter-spacing: -0.02em;
 }
+
+/* el botón que también cae */
+.boton-azar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.55em 1.1em 0.5em;
+  background: var(--acento);
+  color: var(--color-papel);
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 3vw, 2.4rem);
+  line-height: 1;
+  text-transform: uppercase;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: 0 8px 0 rgb(0 0 0 / 0.25);
+  white-space: nowrap;
+  cursor: pointer;
+  z-index: 5500;
+}
+.boton-azar span {
+  display: inline-block;
+  animation: girar 6s linear infinite;
+}
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}

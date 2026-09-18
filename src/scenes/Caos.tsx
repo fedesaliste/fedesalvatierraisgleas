@@ -11,12 +11,15 @@ gsap.registerPlugin(ScrollTrigger)
 type Props = {
   rng: Rng
   onSelect: (o: Obra) => void
+  /** el visitante pide otro azar: todo se repele del centro y vuelve a empezar con otra semilla */
+  onOtroAzar: () => void
   /** la sección alta que define cuánto scroll dura el caos */
   trigger: RefObject<HTMLElement | null>
 }
 
-export default function Caos({ rng, onSelect, trigger }: Props) {
+export default function Caos({ rng, onSelect, onOtroAzar, trigger }: Props) {
   const ref = useRef<HTMLDivElement>(null)
+  const botonRef = useRef<HTMLButtonElement>(null)
   const fragRef = useRef<HTMLDivElement>(null)
   const [frag, setFrag] = useState<string | null>(null)
   const { t } = useI18n()
@@ -28,30 +31,56 @@ export default function Caos({ rng, onSelect, trigger }: Props) {
     const el = ref.current!
     const caos: CaosEngine = crearCaos({ container: el, rng, obras, onSelect })
 
-    // entrada: algunas obras irrumpen, sin orden, a ritmo irregular
-    const inicial = rng.int(7, 11)
+    // entrada: una lluvia de obras, sin orden, a ritmo irregular
+    const inicial = rng.int(12, 17)
     const timers: number[] = []
-    let t0 = 300
+    let t0 = 150
     for (let i = 0; i < inicial; i++) {
       timers.push(window.setTimeout(() => caos.irrumpir(), t0))
-      t0 += rng.range(120, 700)
+      t0 += rng.range(60, 320)
     }
 
-    // el sitio muta solo (mientras el caos esté a la vista)
+    // el botón de "otro azar" también cae, como un cuerpo más
     let alive = true
+    const boton = botonRef.current!
+    let explotando = false
+    timers.push(
+      window.setTimeout(() => {
+        boton.style.visibility = 'visible'
+        caos.agregarElemento(boton, { density: 0.006, restitution: 0.5 })
+      }, t0 + rng.range(400, 1200)),
+    )
+    let down: { x: number; y: number; t: number } | null = null
+    const onDown = (e: PointerEvent) => (down = { x: e.clientX, y: e.clientY, t: performance.now() })
+    const onUp = async (e: PointerEvent) => {
+      if (!down || explotando) return
+      const d = Math.hypot(e.clientX - down.x, e.clientY - down.y)
+      const dt = performance.now() - down.t
+      down = null
+      if (d > 8 || dt > 400) return
+      explotando = true
+      alive = false
+      boton.style.pointerEvents = 'none'
+      await caos.explotar()
+      onOtroAzar()
+    }
+    boton.addEventListener('pointerdown', onDown)
+    boton.addEventListener('pointerup', onUp)
+
+    // el sitio muta solo (mientras el caos esté a la vista)
     const mutar = () => {
       if (!alive) return
       if (activo.current) {
         const n = caos.count()
         const r = rng.next()
-        if (n < 6 || (r < 0.35 && n < 16)) caos.irrumpir()
+        if (n < 8 || (r < 0.4 && n < 20)) caos.irrumpir()
         else if (r < 0.6) caos.impulso()
         else if (r < 0.72) caos.retirar()
         else if (r < 0.78) caos.vuelco()
         else if (r < 0.9) setFrag(rng.pick(fragsRef.current))
         else caos.irrumpir()
       }
-      timers.push(window.setTimeout(mutar, rng.range(2500, 7000)))
+      timers.push(window.setTimeout(mutar, rng.range(1800, 5000)))
     }
     timers.push(window.setTimeout(mutar, 4000))
 
@@ -80,10 +109,17 @@ export default function Caos({ rng, onSelect, trigger }: Props) {
     return () => {
       alive = false
       timers.forEach(clearTimeout)
+      boton.removeEventListener('pointerdown', onDown)
+      boton.removeEventListener('pointerup', onUp)
       st.kill()
       caos.destroy()
+      // el botón vuelve al DOM de React para la próxima ronda
+      boton.style.cssText = ''
+      boton.style.visibility = 'hidden'
+      boton.classList.remove('obra-body')
+      ref.current?.appendChild(boton)
     }
-  }, [rng, onSelect, trigger])
+  }, [rng, onSelect, onOtroAzar, trigger])
 
   // un fragmento del manifiesto aparece en un lugar cualquiera y se va
   useEffect(() => {
@@ -110,6 +146,16 @@ export default function Caos({ rng, onSelect, trigger }: Props) {
 
   return (
     <div ref={ref} className="absolute inset-0 overflow-hidden touch-none">
+      <button
+        ref={botonRef}
+        type="button"
+        className="boton-azar"
+        style={{ visibility: 'hidden' }}
+        aria-label={t.otroAzar}
+      >
+        {t.otroAzar}
+        <span aria-hidden>↻</span>
+      </button>
       {frag && (
         <div
           ref={fragRef}

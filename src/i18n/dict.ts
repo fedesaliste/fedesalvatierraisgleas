@@ -8,6 +8,7 @@ export type Dict = {
   roles: string
   visita: string
   repetir: string
+  otroAzar: string
   hint: string
   scrollHint: string
   sinTitulo: string
@@ -32,6 +33,7 @@ export const dict: Record<Lang, Dict> = {
     roles: 'arquitecto · artista',
     visita: 'visita',
     repetir: 'repetir este azar',
+    otroAzar: 'otro azar',
     hint: 'arrastrá · soltá · dejá que pase',
     scrollHint: 'scrolleá para sacudir',
     sinTitulo: 'sin título',
@@ -71,6 +73,7 @@ export const dict: Record<Lang, Dict> = {
     roles: 'architect · artist',
     visita: 'visit',
     repetir: 'replay this chance',
+    otroAzar: 'another chance',
     hint: 'drag · drop · let it happen',
     scrollHint: 'scroll to shake',
     sinTitulo: 'untitled',
@@ -110,6 +113,7 @@ export const dict: Record<Lang, Dict> = {
     roles: 'architetto · artista',
     visita: 'visita',
     repetir: 'ripeti questo caso',
+    otroAzar: 'un altro caso',
     hint: 'trascina · lascia · lascia che accada',
     scrollHint: 'scorri per scuotere',
     sinTitulo: 'senza titolo',
@@ -149,6 +153,7 @@ export const dict: Record<Lang, Dict> = {
     roles: 'architecte · artiste',
     visita: 'visite',
     repetir: 'rejouer ce hasard',
+    otroAzar: 'un autre hasard',
     hint: 'glisse · lâche · laisse faire',
     scrollHint: 'scrolle pour secouer',
     sinTitulo: 'sans titre',
@@ -188,6 +193,7 @@ export const dict: Record<Lang, Dict> = {
     roles: '建築家 · アーティスト',
     visita: '訪問',
     repetir: 'この偶然をもう一度',
+    otroAzar: '別の偶然',
     hint: 'つかむ · はなす · なりゆきにまかせる',
     scrollHint: 'スクロールして揺らす',
     sinTitulo: '無題',
