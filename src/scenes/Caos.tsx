@@ -157,7 +157,7 @@ export default function Caos({ rng, onSelect, onOtroAzar, trigger }: Props) {
   }, [frag, rng])
 
   return (
-    <div ref={ref} className="absolute inset-0 overflow-hidden touch-none">
+    <div ref={ref} className="absolute inset-0 overflow-hidden touch-pan-y">
       <BotonAzar ref={botonRef} texto={t.otroAzar} rng={rng} />
       {frag && (
         <div

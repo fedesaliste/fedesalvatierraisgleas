@@ -248,9 +248,20 @@ export function crearCaos({ container, rng, obras, onSelect }: CaosOptions): Cao
   })
   World.add(world, mc)
   // que el scroll/zoom del mouse no lo agarre Matter
-  const m = mouse as Matter.Mouse & { element: HTMLElement; mousewheel: EventListener }
+  const m = mouse as Matter.Mouse & {
+    element: HTMLElement
+    mousewheel: EventListener
+    mousedown: EventListener
+    mousemove: EventListener
+    mouseup: EventListener
+  }
   m.element.removeEventListener('wheel', m.mousewheel)
   m.element.removeEventListener('DOMMouseScroll', m.mousewheel)
+  // ni el touch: Matter hace preventDefault en touchmove y bloquea el scroll en móvil.
+  // El tap sigue llegando por los eventos de mouse que emula el navegador.
+  m.element.removeEventListener('touchstart', m.mousedown)
+  m.element.removeEventListener('touchmove', m.mousemove)
+  m.element.removeEventListener('touchend', m.mouseup)
 
   let downAt = 0
   let downPos = { x: 0, y: 0 }
