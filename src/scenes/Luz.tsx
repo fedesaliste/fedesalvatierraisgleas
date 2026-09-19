@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { mulberry32, type Rng } from '../engine/random'
 import { obras, src, type Obra } from '../lib/obras'
 import sala from '../data/sala.json'
+import { DESTACADAS } from '../data/destacadas'
 import { useI18n } from '../i18n'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -35,7 +36,8 @@ export default function Luz({ rng, onSelect }: Props) {
 
   const escena = useMemo(() => {
     const r = mulberry32(rng.seed ^ 0x1c7)
-    const obra = r.pick(obras)
+    const candidatas = obras.filter((o) => DESTACADAS.includes(o.id))
+    const obra = r.pick(candidatas.length ? candidatas : obras)
     // trozos: grilla 3×3 con los vértices internos corridos, cada uno con su
     // punto de partida disperso por la pantalla
     const gx = [0, r.range(28, 40), r.range(60, 72), 100]
@@ -120,6 +122,7 @@ export default function Luz({ rng, onSelect }: Props) {
       tl.set(q('.luz-flash'), { opacity: 1 }, 0.47)
         .to(q('.luz-flash'), { opacity: 0, duration: 0.05, ease: 'power4.out' }, 0.47)
         .to(escenario, { backgroundColor: '#080706', duration: 0.05 }, 0.47)
+        .to(q('.luz-texto'), { color: '#efece4', duration: 0.05 }, 0.47)
         .to(q('.luz-sombra'), { opacity: 0, duration: 0.04 }, 0.47)
         .to(q('.luz-ficha'), { opacity: 1, duration: 0.04 }, 0.5)
         .to(q('.luz-escala'), { opacity: 0, duration: 0.03 }, 0.47)
@@ -164,7 +167,7 @@ export default function Luz({ rng, onSelect }: Props) {
         <div className="luz-escenario sticky top-0 h-screen overflow-hidden bg-papel">
           {/* rótulo */}
           <header className="pointer-events-none absolute left-4 top-24 z-30 md:left-10">
-            <p className="text-[11px] uppercase tracking-wider opacity-60 mix-blend-difference text-white">
+            <p className="luz-texto text-[11px] uppercase tracking-wider opacity-60">
               {t.luz.titulo} · {t.luz.sub}
             </p>
           </header>
@@ -183,7 +186,7 @@ export default function Luz({ rng, onSelect }: Props) {
                   >
                     {i + 1}. {p}
                   </h3>
-                  <p className="luz-frase mt-3 max-w-lg text-[13px] leading-snug opacity-0 mix-blend-difference text-white md:text-[14px]">
+                  <p className="luz-frase luz-texto mt-3 max-w-lg text-[13px] leading-snug opacity-0 md:text-[14px]">
                     {t.luz.frases[i]}
                   </p>
                 </div>
@@ -205,7 +208,7 @@ export default function Luz({ rng, onSelect }: Props) {
             <div className="relative">
               <div
                 className="luz-obra relative cursor-pointer"
-                style={{ width: 'min(30vmin, 260px)', aspectRatio: obra.ratio }}
+                style={{ width: 'min(52vmin, 460px)', aspectRatio: obra.ratio }}
                 onClick={() => onSelect(obra)}
               >
                 <div
