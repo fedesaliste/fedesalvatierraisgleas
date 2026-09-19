@@ -23,6 +23,15 @@ export type Dict = {
   escribime: string
   creditos: string
   fragmentos: string[]
+  luz: {
+    titulo: string
+    sub: string
+    pasos: [string, string, string, string]
+    frases: [string, string, string, string]
+    escala: string
+    registro: string
+    registroSub: string
+  }
 }
 
 export const dict: Record<Lang, Dict> = {
@@ -52,6 +61,20 @@ export const dict: Record<Lang, Dict> = {
     contacto: 'contacto',
     escribime: 'escribime',
     creditos: 'cada visita es distinta. esta fue la',
+    luz: {
+      titulo: 'luz',
+      sub: 'cómo se hace',
+      pasos: ['recolectar', 'componer', 'fotografiar', 'proyectar'],
+      frases: [
+        'fragmentos de vidrio, papel, aluminio: restos que por distintas circunstancias terminan cruzándose en mi camino.',
+        'no se planea. se reorganiza lo que apareció, como quien recoge huellas.',
+        'luz natural, exposición rapidísima. la obra puede romperse o desaparecer; la imagen queda.',
+        'lo pequeño se vuelve inmenso. lo accidental, paisaje. lo descartado, visible.',
+      ],
+      escala: 'cabe en una mano',
+      registro: 'registro de sala',
+      registroSub: 'lo que se proyectó, y quién estaba',
+    },
     fragmentos: [
       'el arte nace sin pedir permiso',
       'no nace para satisfacer una necesidad',
@@ -92,6 +115,20 @@ export const dict: Record<Lang, Dict> = {
     contacto: 'contact',
     escribime: 'write me',
     creditos: 'every visit is different. this one was',
+    luz: {
+      titulo: 'light',
+      sub: 'how it is made',
+      pasos: ['collect', 'compose', 'photograph', 'project'],
+      frases: [
+        'shards of glass, paper, aluminium: remains that, for one reason or another, cross my path.',
+        'nothing is planned. what showed up gets rearranged, like picking up traces.',
+        'natural light, a very fast exposure. the piece may break or vanish; the image stays.',
+        'the small becomes immense. the accidental, a landscape. the discarded, visible.',
+      ],
+      escala: 'fits in one hand',
+      registro: 'room record',
+      registroSub: 'what was projected, and who was there',
+    },
     fragmentos: [
       'art is born without asking permission',
       'it is not born to satisfy a need',
@@ -132,6 +169,20 @@ export const dict: Record<Lang, Dict> = {
     contacto: 'contatto',
     escribime: 'scrivimi',
     creditos: 'ogni visita è diversa. questa è stata la',
+    luz: {
+      titulo: 'luce',
+      sub: 'come si fa',
+      pasos: ['raccogliere', 'comporre', 'fotografare', 'proiettare'],
+      frases: [
+        'frammenti di vetro, carta, alluminio: resti che per circostanze diverse incrociano la mia strada.',
+        'non si pianifica. si riorganizza ciò che è apparso, come chi raccoglie tracce.',
+        'luce naturale, esposizione rapidissima. l’opera può rompersi o sparire; l’immagine resta.',
+        'il piccolo diventa immenso. l’accidentale, paesaggio. lo scartato, visibile.',
+      ],
+      escala: 'sta in una mano',
+      registro: 'registro di sala',
+      registroSub: 'ciò che è stato proiettato, e chi c’era',
+    },
     fragmentos: [
       "l'arte nasce senza chiedere permesso",
       'non nasce per soddisfare un bisogno',
@@ -172,6 +223,20 @@ export const dict: Record<Lang, Dict> = {
     contacto: 'contact',
     escribime: 'écris-moi',
     creditos: 'chaque visite est différente. celle-ci était la',
+    luz: {
+      titulo: 'lumière',
+      sub: 'comment ça se fait',
+      pasos: ['ramasser', 'composer', 'photographier', 'projeter'],
+      frases: [
+        'éclats de verre, papier, aluminium : des restes qui, par hasard, croisent mon chemin.',
+        'rien n’est planifié. on réorganise ce qui est apparu, comme on ramasse des traces.',
+        'lumière naturelle, exposition très rapide. l’œuvre peut se casser ou disparaître ; l’image reste.',
+        'le petit devient immense. l’accidentel, paysage. le rebut, visible.',
+      ],
+      escala: 'tient dans une main',
+      registro: 'registre de salle',
+      registroSub: 'ce qui fut projeté, et qui était là',
+    },
     fragmentos: [
       "l'art naît sans demander la permission",
       'il ne naît pas pour satisfaire un besoin',
@@ -212,6 +277,20 @@ export const dict: Record<Lang, Dict> = {
     contacto: '連絡',
     escribime: 'メールを送る',
     creditos: '訪問はそれぞれ違う。これは',
+    luz: {
+      titulo: '光',
+      sub: 'つくりかた',
+      pasos: ['拾う', '組む', '撮る', '投影する'],
+      frases: [
+        'ガラスの破片、紙、アルミ。さまざまな偶然で私の道に現れた残骸。',
+        '計画はしない。現れたものを並べ直す。痕跡を拾うように。',
+        '自然光、きわめて速い露光。作品は壊れ消えるかもしれないが、像は残る。',
+        '小さなものが巨大になる。偶然が風景に。捨てられたものが見えるものに。',
+      ],
+      escala: '手のひらに収まる',
+      registro: '会場の記録',
+      registroSub: '何が投影され、誰がいたか',
+    },
     fragmentos: [
       '芸術は許しを求めずに生まれる',
       '必要を満たすために生まれるのではない',

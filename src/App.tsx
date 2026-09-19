@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import Caos from './scenes/Caos'
+import Luz from './scenes/Luz'
 import Sedimento from './scenes/Sedimento'
 import Manifiesto from './scenes/Manifiesto'
 import Bio from './scenes/Bio'
@@ -62,6 +63,7 @@ function Sitio() {
         </div>
       </section>
 
+      <Luz rng={rng} onSelect={onSelect} />
       <Sedimento rng={rng} onSelect={onSelect} />
       <Manifiesto rng={rng} />
       <Bio rng={rng} />

@@ -151,3 +151,13 @@ body {
   75% { translate: 1px 1px; }
   100% { translate: 0 0; }
 }
+
+/* luz: fotos de sala con borde de papel y sombra */
+.luz-foto {
+  padding: 6px;
+  background: #efece4;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.45);
+}
+.luz-foto figcaption {
+  color: #141210;
+}
