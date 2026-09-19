@@ -63,10 +63,7 @@ export default function Luz({ rng, onSelect }: Props) {
       h: r.range(0.34, 0.5), // fracción del alto de la pantalla
       flip: r.chance(0.5),
     })).sort((a, b) => a.x - b.x)
-    const fotos = r
-      .shuffle(sala)
-      .slice(0, 6)
-      .map((f) => ({ ...f, rot: r.range(-6, 6), dy: r.range(-16, 16) }))
+    const fotos = r.shuffle(sala).slice(0, 6)
     return { obra, trozos, gente, fotos }
   }, [rng.seed])
 
@@ -263,24 +260,25 @@ export default function Luz({ rng, onSelect }: Props) {
         </div>
       </section>
 
-      {/* registro de sala: fotos reales, pegadas torcidas sobre el negro */}
-      <section className="relative z-10 bg-[#080706] px-4 pb-32 pt-24 text-papel md:px-10">
-        <header className="mb-14 flex items-end justify-between border-b border-papel/20 pb-4">
+      {/* en sala: las fotos del portafolio, grandes y sin fecha — no son registro, son
+          una forma posible de verlo. el orden y cuáles entran, al azar */}
+      <section className="relative z-10 bg-[#080706] px-2 pb-24 pt-24 text-papel md:px-4">
+        <header className="mb-10 flex flex-col gap-3 px-2 md:flex-row md:items-end md:justify-between md:px-6">
           <h2 className="font-display text-[clamp(2.4rem,7vw,6rem)] uppercase leading-[0.9]">{t.luz.registro}</h2>
-          <p className="text-[11px] uppercase tracking-wider opacity-60">{t.luz.registroSub} · 2018–2025</p>
+          <p className="max-w-sm text-[11px] uppercase tracking-wider opacity-60 md:text-right">{t.luz.registroSub}</p>
         </header>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-12 md:grid-cols-3">
-          {fotos.map((f) => (
+        <div className="grid grid-cols-2 gap-2 md:gap-3">
+          {fotos.map((f, i) => (
             <figure
               key={f.file}
-              className="luz-foto"
-              style={{
-                transform: `rotate(${f.rot}deg) translateY(${f.dy}px)`,
-                aspectRatio: `${f.w}/${f.h}`,
-              }}
+              className={`luz-foto relative overflow-hidden ${i % 3 === 0 ? 'col-span-2 aspect-[16/9]' : 'aspect-[4/3]'}`}
             >
-              <img src={`/sala/${f.file}`} alt="" loading="lazy" className="h-full w-full object-cover" />
-              <figcaption className="mt-2 text-[11px] uppercase tracking-wider opacity-50">{f.year}</figcaption>
+              <img
+                src={`/sala/${f.file}`}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.03]"
+              />
             </figure>
           ))}
         </div>
