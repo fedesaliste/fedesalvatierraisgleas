@@ -18,6 +18,9 @@ html {
 html,
 body {
   margin: 0;
+  /* nada se corre de costado: las obras rotadas de Sedimento sobresalen unos px
+     y eso abría un scroll horizontal. clip (y no hidden) no rompe el sticky. */
+  overflow-x: clip;
   background: var(--color-papel);
   color: var(--color-tinta);
   font-family: var(--font-mono);

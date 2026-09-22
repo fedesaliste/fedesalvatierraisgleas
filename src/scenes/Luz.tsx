@@ -105,7 +105,7 @@ export default function Luz({ rng, onSelect }: Props) {
         const franja = 100 / elegidas.length
         return {
           ...p,
-          x: -6 + i * franja + r.range(0, franja * 0.7), // vw, repartidos
+          x: 1 + i * franja * 0.94 + r.range(0, franja * 0.5), // vw, repartidos
           h: p.alto * (0.52 - lejos * 0.17), // fracción del alto de la pantalla
           flip: r.chance(0.35),
           lejos,
@@ -301,6 +301,7 @@ export default function Luz({ rng, onSelect }: Props) {
                 style={{
                   left: `${g.x}vw`,
                   height: `${g.h * 100}vh`,
+                  aspectRatio: String(g.ratio),
                   transform: `translateY(4%) ${g.flip ? 'scaleX(-1)' : ''}`,
                   zIndex: Math.round((1 - g.lejos) * 10),
                 }}
@@ -309,7 +310,7 @@ export default function Luz({ rng, onSelect }: Props) {
                   src={`/gente/${g.file}`}
                   alt=""
                   draggable={false}
-                  className="h-full w-auto select-none"
+                  className="h-full w-full select-none object-contain"
                   style={{
                     opacity: 1 - g.lejos * 0.3,
                     // contraluz del proyector: si no, sobre la pared negra desaparecen
