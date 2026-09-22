@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { mulberry32, type Rng } from '../engine/random'
 import { obras, src, type Obra } from '../lib/obras'
 import sala from '../data/sala.json'
+import { GENTE } from '../data/gente'
 import { DESTACADAS } from '../data/destacadas'
 import { useI18n } from '../i18n'
 
@@ -18,18 +19,6 @@ type Props = { rng: Rng; onSelect: (o: Obra) => void }
  * hasta llenar la pared con gente adelante (proyectar).
  */
 
-// siluetas recortadas en papel, caja 100×300. distintas alturas y gestos.
-const SILUETAS = [
-  // adulto de pie
-  'M50 0c-13 0-22 10-22 24 0 10 5 18 12 22-16 6-27 20-27 44v70l10 4v136h18l6-120h6l6 120h18V164l10-4V90c0-24-11-38-27-44 7-4 12-12 12-22C72 10 63 0 50 0z',
-  // adulto señalando
-  'M52 0c-13 0-22 10-22 24 0 10 5 18 12 22-16 6-26 20-26 44v66l10 4v140h18l6-124h6l6 124h18V160l10-4v-40l32-30-8-8-26 20V90c0-24-11-38-27-44 7-4 12-12 12-22C74 10 65 0 52 0z',
-  // niño
-  'M50 90c-11 0-19 8-19 20 0 8 4 14 10 18-13 5-21 16-21 36v52l8 3v81h16l5-76h2l5 76h16v-81l8-3v-52c0-20-8-31-21-36 6-4 10-10 10-18 0-12-8-20-19-20z',
-  // niño con brazos abiertos
-  'M50 100c-11 0-19 8-19 20 0 8 4 14 10 18-8 3-14 8-18 15l-22-18-7 8 30 26v45l8 3v83h16l5-78h2l5 78h16v-83l8-3v-45l30-26-7-8-22 18c-4-7-10-12-18-15 6-4 10-10 10-18 0-12-8-20-19-20z',
-] as const
-
 export default function Luz({ rng, onSelect }: Props) {
   const ref = useRef<HTMLElement>(null)
   const { t, lang } = useI18n()
@@ -38,33 +27,92 @@ export default function Luz({ rng, onSelect }: Props) {
     const r = mulberry32(rng.seed ^ 0x1c7)
     const candidatas = obras.filter((o) => DESTACADAS.includes(o.id))
     const obra = r.pick(candidatas.length ? candidatas : obras)
-    // trozos: grilla 3×3 con los vértices internos corridos, cada uno con su
-    // punto de partida disperso por la pantalla
-    const gx = [0, r.range(28, 40), r.range(60, 72), 100]
-    const gy = [0, r.range(28, 40), r.range(60, 72), 100]
-    const jit = (v: number) => (v === 0 || v === 100 ? v : v + r.range(-9, 9))
-    const pts: number[][][] = []
+    // trozos: grilla 3×3, pero los cortes no son rectos. cada borde se
+    // subdivide y se desvía a mano; los bordes se comparten entre piezas
+    // vecinas, así el papel rasgado vuelve a encajar exacto.
+    const gx = [0, r.range(29, 39), r.range(61, 71), 100]
+    const gy = [0, r.range(29, 39), r.range(61, 71), 100]
+    const nodos: number[][][] = []
     for (let j = 0; j < 4; j++) {
-      pts.push([])
-      for (let i = 0; i < 4; i++) pts[j].push([jit(gx[i]), jit(gy[j])])
+      nodos.push([])
+      for (let i = 0; i < 4; i++) {
+        const bx = gx[i] === 0 || gx[i] === 100
+        const by = gy[j] === 0 || gy[j] === 100
+        nodos[j].push([bx ? gx[i] : gx[i] + r.range(-5, 5), by ? gy[j] : gy[j] + r.range(-5, 5)])
+      }
+    }
+    // puntos interiores de un borde: desvío perpendicular grueso + fibra fina
+    const borde = (a: number[], b: number[], recto: boolean) => {
+      const pasos = 9
+      const dx = b[0] - a[0]
+      const dy = b[1] - a[1]
+      const len = Math.hypot(dx, dy) || 1
+      const nx = -dy / len
+      const ny = dx / len
+      const amp = recto ? 0 : r.range(1.6, 3.2)
+      const fase = r.range(0, Math.PI * 2)
+      const pts: number[][] = []
+      for (let k = 1; k < pasos; k++) {
+        const t = k / pasos + (recto ? 0 : r.range(-0.02, 0.02))
+        const curva = Math.sin(t * Math.PI) * Math.sin(fase + t * Math.PI * r.range(1.4, 2.6))
+        const d = amp * curva + (recto ? 0 : r.range(-0.55, 0.55))
+        pts.push([a[0] + dx * t + nx * d, a[1] + dy * t + ny * d])
+      }
+      return pts
+    }
+    const H: number[][][][] = [] // bordes horizontales H[j][i]
+    const V: number[][][][] = [] // bordes verticales V[j][i]
+    for (let j = 0; j < 4; j++) {
+      H.push([])
+      for (let i = 0; i < 3; i++) H[j].push(borde(nodos[j][i], nodos[j][i + 1], j === 0 || j === 3))
+    }
+    for (let j = 0; j < 3; j++) {
+      V.push([])
+      for (let i = 0; i < 4; i++) V[j].push(borde(nodos[j][i], nodos[j + 1][i], i === 0 || i === 3))
     }
     const trozos = []
     for (let j = 0; j < 3; j++)
       for (let i = 0; i < 3; i++) {
-        const p = [pts[j][i], pts[j][i + 1], pts[j + 1][i + 1], pts[j + 1][i]]
+        const p = [
+          nodos[j][i],
+          ...H[j][i],
+          nodos[j][i + 1],
+          ...V[j][i + 1],
+          nodos[j + 1][i + 1],
+          ...[...H[j + 1][i]].reverse(),
+          nodos[j + 1][i],
+          ...[...V[j][i]].reverse(),
+        ]
+        const ang = r.range(0, Math.PI * 2)
+        const dist = r.range(38, 95)
         trozos.push({
-          clip: `polygon(${p.map(([x, y]) => `${x}% ${y}%`).join(', ')})`,
-          x: r.range(-48, 48), // vw
-          y: r.range(-40, 40), // vh
-          rot: r.range(-140, 140),
+          clip: `polygon(${p.map(([x, y]) => `${x.toFixed(2)}% ${y.toFixed(2)}%`).join(', ')})`,
+          x: Math.cos(ang) * dist * 0.55, // vw
+          y: Math.sin(ang) * dist * 0.45, // vh
+          rot: r.range(-150, 150),
+          esc: r.range(1.05, 1.3),
+          // cada pieza llega con su propio tiempo: nada se mueve en bloque
+          retraso: r.range(0, 0.1),
+          dur: r.range(0.26, 0.4),
         })
       }
-    const gente = Array.from({ length: r.int(5, 8) }, () => ({
-      forma: r.int(0, SILUETAS.length - 1),
-      x: r.range(4, 90), // vw
-      h: r.range(0.34, 0.5), // fracción del alto de la pantalla
-      flip: r.chance(0.5),
-    })).sort((a, b) => a.x - b.x)
+    // el público: personas distintas, sin repetir, repartidas a lo ancho de la
+    // sala y escaladas por distancia (las del fondo, más chicas y más lavadas)
+    const elegidas = r.shuffle(GENTE).slice(0, r.int(6, 9))
+    const gente = elegidas
+      .map((p, i) => {
+        const lejos = r.next() // 0 adelante, 1 al fondo
+        const franja = 100 / elegidas.length
+        return {
+          ...p,
+          x: -6 + i * franja + r.range(0, franja * 0.7), // vw, repartidos
+          h: p.alto * (0.52 - lejos * 0.17), // fracción del alto de la pantalla
+          flip: r.chance(0.35),
+          lejos,
+          entra: r.range(0, 0.05), // cada uno entra a su tiempo
+        }
+      })
+      .sort((a, b) => b.lejos - a.lejos)
     const fotos = r.shuffle(sala).slice(0, 6)
     return { obra, trozos, gente, fotos }
   }, [rng.seed])
@@ -92,7 +140,7 @@ export default function Luz({ rng, onSelect }: Props) {
           trigger: root,
           start: 'top top',
           end: 'bottom bottom',
-          scrub: 0.6,
+          scrub: 1.6,
           invalidateOnRefresh: true,
         },
       })
@@ -101,31 +149,32 @@ export default function Luz({ rng, onSelect }: Props) {
         if (i < 3) tl.to([pasos[i], frases[i]], { opacity: 0, y: -12, duration: 0.05 }, at + 0.2)
       }
 
-      // 1 recolectar → 2 componer: los trozos vuelan hasta encajar
+      // 1 recolectar → 2 componer: los trozos encajan al ritmo del scroll. cada
+      // uno con su propio tiempo y easing, encimados entre sí, para que el
+      // armado se sienta continuo y no un salto. todo cierra antes de 0.5, que
+      // es donde entra el flash.
       mostrar(0, 0.02)
-      tl.to(
-        trozos,
-        {
-          x: 0,
-          y: 0,
-          rotate: 0,
-          duration: 0.34,
-          ease: 'power3.inOut',
-          stagger: { each: 0.012, from: 'random' },
-        },
-        0.04,
-      )
-      mostrar(1, 0.26)
+      trozos.forEach((el, i) => {
+        const tz = escena.trozos[i]
+        const at = 0.03 + tz.retraso * 0.8
+        tl.to(el, { x: 0, y: 0, duration: 0.16 + tz.dur * 0.5, ease: 'sine.inOut' }, at)
+          .to(el, { rotate: 0, scale: 1, duration: 0.2 + tz.dur * 0.5, ease: 'power2.out' }, at)
+          .to(el, { filter: 'drop-shadow(0 0 0 rgba(0,0,0,0))', duration: 0.18, ease: 'none' }, at)
+      })
+      // con todo encajado aparece la obra entera por debajo: tapa las costuras
+      // finas que deja el antialias del recorte entre pieza y pieza
+      tl.to(q('.luz-completa'), { opacity: 1, duration: 0.04, ease: 'none' }, 0.48)
+      mostrar(1, 0.3)
 
       // 3 fotografiar: flash y se apaga el estudio
-      mostrar(2, 0.5)
-      tl.set(q('.luz-flash'), { opacity: 1 }, 0.47)
-        .to(q('.luz-flash'), { opacity: 0, duration: 0.05, ease: 'power4.out' }, 0.47)
-        .to(escenario, { backgroundColor: '#080706', duration: 0.05 }, 0.47)
-        .to(q('.luz-texto'), { color: '#efece4', duration: 0.05 }, 0.47)
-        .to(q('.luz-sombra'), { opacity: 0, duration: 0.04 }, 0.47)
-        .to(q('.luz-ficha'), { opacity: 1, duration: 0.04 }, 0.5)
-        .to(q('.luz-escala'), { opacity: 0, duration: 0.03 }, 0.47)
+      mostrar(2, 0.58)
+      tl.set(q('.luz-flash'), { opacity: 1 }, 0.55)
+        .to(q('.luz-flash'), { opacity: 0, duration: 0.05, ease: 'power4.out' }, 0.55)
+        .to(escenario, { backgroundColor: '#080706', duration: 0.05 }, 0.55)
+        .to(q('.luz-texto'), { color: '#efece4', duration: 0.05 }, 0.55)
+        .to(q('.luz-sombra'), { opacity: 0, duration: 0.04 }, 0.55)
+        .to(q('.luz-ficha'), { opacity: 1, duration: 0.04 }, 0.58)
+        .to(q('.luz-escala'), { opacity: 0, duration: 0.03 }, 0.55)
 
       // 4 proyectar: haz, la obra crece, entra la gente
       mostrar(3, 0.76)
@@ -142,20 +191,16 @@ export default function Luz({ rng, onSelect }: Props) {
           },
           0.7,
         )
-        .to(
-          q('.luz-silueta'),
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.14,
-            ease: 'power3.out',
-            stagger: 0.02,
-          },
-          0.8,
+      q<HTMLElement>('.luz-silueta').forEach((el, i) => {
+        tl.to(
+          el,
+          { y: 0, opacity: 1, duration: 0.14, ease: 'power3.out' },
+          0.8 + escena.gente[i].entra,
         )
+      })
     }, root)
     return () => ctx.revert()
-  }, [rng.seed, lang])
+  }, [escena, lang])
 
   const { obra, trozos, gente, fotos } = escena
   // la versión grande: proyectada llega a ocupar casi toda la pantalla
@@ -218,6 +263,10 @@ export default function Luz({ rng, onSelect }: Props) {
                     filter: 'blur(2px)',
                   }}
                 />
+                <div
+                  className="luz-completa absolute inset-0 bg-cover bg-center opacity-0"
+                  style={{ backgroundImage: `url(${cara})` }}
+                />
                 {trozos.map((tz, i) => (
                   <div
                     key={i}
@@ -225,7 +274,8 @@ export default function Luz({ rng, onSelect }: Props) {
                     style={{
                       backgroundImage: `url(${cara})`,
                       clipPath: tz.clip,
-                      transform: `translate(${tz.x}vw, ${tz.y}vh) rotate(${tz.rot}deg)`,
+                      transform: `translate(${tz.x}vw, ${tz.y}vh) rotate(${tz.rot}deg) scale(${tz.esc})`,
+                      filter: 'drop-shadow(0 10px 14px rgba(0,0,0,0.28))',
                     }}
                   />
                 ))}
@@ -245,19 +295,28 @@ export default function Luz({ rng, onSelect }: Props) {
           {/* gente mirando */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-full">
             {gente.map((g, i) => (
-              <svg
+              <div
                 key={i}
                 className="luz-silueta absolute bottom-0 opacity-0"
-                viewBox="0 0 100 300"
                 style={{
                   left: `${g.x}vw`,
                   height: `${g.h * 100}vh`,
-                  transform: `translateY(30%) ${g.flip ? 'scaleX(-1)' : ''}`,
-                  fill: '#050403',
+                  transform: `translateY(4%) ${g.flip ? 'scaleX(-1)' : ''}`,
+                  zIndex: Math.round((1 - g.lejos) * 10),
                 }}
               >
-                <path d={SILUETAS[g.forma]} />
-              </svg>
+                <img
+                  src={`/gente/${g.file}`}
+                  alt=""
+                  draggable={false}
+                  className="h-full w-auto select-none"
+                  style={{
+                    opacity: 1 - g.lejos * 0.3,
+                    // contraluz del proyector: si no, sobre la pared negra desaparecen
+                    filter: `drop-shadow(0 0 ${10 - g.lejos * 5}px rgba(255,244,220,${0.3 - g.lejos * 0.14}))`,
+                  }}
+                />
+              </div>
             ))}
           </div>
         </div>

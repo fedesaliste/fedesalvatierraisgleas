@@ -24,4 +24,5 @@ export function srcSet(o: Obra) {
   return o.sizes.map((s) => `/obras/${o.year}/${o.id}-${s}.webp ${s}w`).join(', ')
 }
 
-export const years = [...new Set(obras.map((o) => o.year))].sort()
+// del más nuevo al más viejo: se entra por lo último y se va hacia el fondo
+export const years = [...new Set(obras.map((o) => o.year))].sort((a, b) => b - a)

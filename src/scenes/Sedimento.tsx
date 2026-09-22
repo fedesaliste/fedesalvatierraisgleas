@@ -125,11 +125,33 @@ export default function Sedimento({ rng, onSelect }: Props) {
 
   return (
     <section ref={ref} className="relative z-10 min-h-screen bg-papel px-4 pb-32 pt-24 md:px-10">
-      <header className="mb-16 flex items-end justify-between border-b border-tinta/30 pb-4">
-        <h2 className="font-display text-[clamp(3rem,10vw,9rem)] leading-[0.85] uppercase">{t.sedimento}</h2>
-        <p className="text-[11px] uppercase tracking-wider opacity-70">
-          {t.sedimentoSub} · {obras.length} {t.obra}s
-        </p>
+      <header className="mb-16 border-b border-tinta/30 pb-4">
+        <div className="flex items-end justify-between gap-6">
+          <h2 className="font-display text-[clamp(3rem,10vw,9rem)] leading-[0.85] uppercase">{t.sedimento}</h2>
+          <p className="text-[11px] uppercase tracking-wider opacity-70">
+            {t.sedimentoSub} · {obras.length} {t.obra}s
+          </p>
+        </div>
+        {/* todos los años con obra, de un vistazo: cada uno baja a su bloque */}
+        <nav className="mt-5 flex flex-wrap items-baseline gap-x-5 gap-y-2">
+          {years.map((y) => (
+            <a
+              key={y}
+              href={`#anio-${y}`}
+              onClick={(e) => {
+                e.preventDefault()
+                document.getElementById(`anio-${y}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }}
+              className="font-display text-[clamp(1.1rem,2.6vw,2rem)] leading-none opacity-45 transition-opacity duration-300 hover:opacity-100"
+              style={{ color: 'var(--acento)' }}
+            >
+              {y}
+              <sup className="ml-1 font-sans text-[9px] tracking-wider opacity-70">
+                {obras.filter((o) => o.year === y).length}
+              </sup>
+            </a>
+          ))}
+        </nav>
       </header>
 
       {years.map((y) => {
@@ -137,7 +159,7 @@ export default function Sedimento({ rng, onSelect }: Props) {
           .filter((o) => o.year === y)
           .sort((a, b) => desorden.get(a.id)!.orden - desorden.get(b.id)!.orden)
         return (
-          <div key={y} className="mb-24">
+          <div key={y} id={`anio-${y}`} className="mb-24 scroll-mt-4">
             <div className="sticky top-4 z-20 mb-6 flex items-baseline gap-4">
               <span className="font-display text-[clamp(2rem,6vw,5rem)] leading-none" style={{ color: 'var(--acento)' }}>
                 {y}
