@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Caos from './scenes/Caos'
 import Luz from './scenes/Luz'
 import Sedimento from './scenes/Sedimento'
@@ -52,6 +52,18 @@ function Sitio({ seed, setSeed }: { seed: number; setSeed: (s: number) => void }
   const onSelect = useCallback((o: Obra) => setSel(o), [])
   const onClose = useCallback(() => setSel(null), [])
   const caosSection = useRef<HTMLElement>(null)
+  // sin "guardar imagen como…" sobre las obras (ni mantener apretado en el celular)
+  useEffect(() => {
+    const no = (e: Event) => {
+      if ((e.target as Element).closest?.('.sed-item, .obra-body, .luz-obra, .luz-foto, .detalle')) e.preventDefault()
+    }
+    document.addEventListener('contextmenu', no)
+    document.addEventListener('dragstart', no)
+    return () => {
+      document.removeEventListener('contextmenu', no)
+      document.removeEventListener('dragstart', no)
+    }
+  }, [])
   const repetir = `?seed=${rng.seed}&lang=${lang}`
 
   return (

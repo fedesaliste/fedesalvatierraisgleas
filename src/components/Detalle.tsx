@@ -31,7 +31,7 @@ export default function Detalle({ obra, onClose }: { obra: Obra; onClose: () => 
   }, [onClose])
   return (
     <div
-      className="fixed inset-0 z-[9000] flex cursor-zoom-out items-center justify-center bg-papel/92 p-6 backdrop-blur-sm"
+      className="detalle fixed inset-0 z-[9000] flex cursor-zoom-out items-center justify-center bg-papel/92 p-6 backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
     >
@@ -39,7 +39,8 @@ export default function Detalle({ obra, onClose }: { obra: Obra; onClose: () => 
         ref={img}
         src={`/obras/${obra.year}/${obra.id}-${obra.sizes[obra.sizes.length - 1]}.webp`}
         alt={obra.title ?? `${t.obra} ${obra.year}`}
-        className="max-h-[85vh] max-w-[90vw] object-contain drop-shadow-2xl"
+        draggable={false}
+        className="protegida max-h-[85vh] max-w-[90vw] object-contain drop-shadow-2xl"
       />
       <p className="absolute bottom-5 left-6 text-[11px] uppercase tracking-wider">
         {obra.title ?? t.sinTitulo} · {obra.year}

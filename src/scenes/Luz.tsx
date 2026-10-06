@@ -387,7 +387,8 @@ export default function Luz({ rng, onSelect }: Props) {
                 src={`/sala/${f.file}`}
                 alt=""
                 loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.03]"
+                draggable={false}
+                className="protegida h-full w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.03]"
               />
             </figure>
           ))}

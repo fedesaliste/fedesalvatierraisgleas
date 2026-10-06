@@ -15,16 +15,18 @@ export default function Sedimento({ rng, onSelect }: Props) {
   const ref = useRef<HTMLElement>(null)
   const { t } = useI18n()
 
-  // desorden fijo por visita (derivado de la semilla, independiente del caos)
+  // desorden fijo por visita (derivado de la semilla, independiente del caos).
+  // el giro y el corrimiento son chicos a propósito: cada obra vive en su celda
+  // con un margen (ver .sed-item) que alcanza para torcerse sin pisar a la vecina
   const desorden = useMemo(() => {
     const r = mulberry32(rng.seed ^ 0x5ed1)
     return new Map(
       obras.map((o) => [
         o.id,
         {
-          rot: r.range(-7, 7),
-          dx: r.range(-10, 10),
-          dy: r.range(-14, 14),
+          rot: r.range(-4.5, 4.5),
+          dx: r.range(-6, 6),
+          dy: r.range(-8, 8),
           span: r.chance(0.14) ? 2 : 1,
           orden: r.next(),
         },
@@ -39,35 +41,44 @@ export default function Sedimento({ rng, onSelect }: Props) {
     const root = ref.current!
     const r = mulberry32(rng.seed ^ 0xa11)
     const pendientes = new Set<HTMLElement>()
+    const encoladas = new WeakSet<HTMLElement>()
     let flush = 0
     const caer = () => {
-      const batch = [...pendientes]
+      // en orden de lectura (fila por fila, de izquierda a derecha), con un poco
+      // de desorden en el tiempo: una cascada continua, no un bloque
+      const batch = [...pendientes].sort((a, b) => {
+        const ra = a.getBoundingClientRect()
+        const rb = b.getBoundingClientRect()
+        return Math.abs(ra.top - rb.top) > 40 ? ra.top - rb.top : ra.left - rb.left
+      })
       pendientes.clear()
-      if (!batch.length) return
-      gsap.fromTo(
-        batch,
-        { y: () => -r.range(180, 420), rotate: () => r.range(-40, 40), opacity: 0 },
-        {
-          y: 0,
-          rotate: (_i, el) => +(el as HTMLElement).dataset.rot!,
-          opacity: 1,
-          duration: () => r.range(0.7, 1.2),
-          ease: 'back.out(1.4)',
-          stagger: { each: 0.06, from: 'random' },
-          overwrite: true,
-        },
-      )
+      batch.forEach((el, i) => {
+        const at = i * 0.075 + r.range(0, 0.05)
+        const rot = +el.dataset.rot!
+        const dy = +el.dataset.dy!
+        // cae poco y aterriza suave: sin rebote, el movimiento se apaga solo
+        gsap.fromTo(
+          el,
+          { y: dy - r.range(60, 110), rotate: rot + r.range(-12, 12), scale: 0.96 },
+          { y: dy, rotate: rot, scale: 1, duration: r.range(1.1, 1.5), ease: 'expo.out', delay: at },
+        )
+        gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.45, ease: 'power1.out', delay: at })
+      })
     }
     // agrupar los que entraron juntos para que caigan en cascada
     const programar = () => {
       clearTimeout(flush)
-      flush = window.setTimeout(caer, 40)
+      flush = window.setTimeout(caer, 60)
     }
     // no dejar caer una obra hasta que su imagen esté decodificada: si no,
     // la imagen lazy aparece a medio cargar (cortada) mientras ya se ve
     const encolar = (el: HTMLElement) => {
       const img = el.querySelector('img')
+      // una sola vez por obra: si la imagen llega después del plazo de abajo,
+      // no tiene que volver a caer
       const listo = () => {
+        if (encoladas.has(el)) return
+        encoladas.add(el)
         pendientes.add(el)
         programar()
       }
@@ -78,7 +89,7 @@ export default function Sedimento({ rng, onSelect }: Props) {
       })
       p.then(() => img.decode().catch(() => {})).then(listo)
       // de última, que caiga igual aunque la imagen no llegue
-      window.setTimeout(() => !pendientes.has(el) && gsap.getProperty(el, 'opacity') === 0 && listo(), 4000)
+      window.setTimeout(listo, 2500)
     }
     const sinAnimar = new Set<HTMLElement>()
     const io = new IntersectionObserver(
@@ -86,23 +97,40 @@ export default function Sedimento({ rng, onSelect }: Props) {
         for (const e of entries) {
           if (!e.isIntersecting) continue
           io.unobserve(e.target)
-          sinAnimar.delete(e.target as HTMLElement)
-          encolar(e.target as HTMLElement)
+          const el = (e.target as HTMLElement).querySelector<HTMLElement>('.sed-obra')!
+          sinAnimar.delete(el)
+          encolar(el)
         }
       },
-      { rootMargin: '0px 0px 15% 0px' },
+      // cae cuando ya se ve, no antes: si no, la mitad del movimiento pasa fuera de pantalla
+      { rootMargin: '0px 0px -6% 0px' },
     )
-    const todos = [...root.querySelectorAll<HTMLElement>('.sed-item')]
-    todos.forEach((el) => io.observe(el))
-
-    todos.forEach((el) => sinAnimar.add(el))
+    // y las imágenes se piden bastante antes de que lleguen, así cuando entran ya están
+    const pedir = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue
+          pedir.unobserve(e.target)
+          const img = e.target.querySelector('img')
+          if (img) img.loading = 'eager'
+        }
+      },
+      { rootMargin: '0px 0px 120% 0px' },
+    )
+    const figs = [...root.querySelectorAll<HTMLElement>('.sed-item')]
+    figs.forEach((f) => {
+      io.observe(f)
+      pedir.observe(f)
+      sinAnimar.add(f.querySelector<HTMLElement>('.sed-obra')!)
+    })
     // si un salto de scroll dejó obras arriba sin haber pasado por la pantalla, mostrarlas sin más
     const onScroll = () => {
       for (const el of sinAnimar) {
         if (el.getBoundingClientRect().bottom < 0) {
-          io.unobserve(el)
+          io.unobserve(el.parentElement!)
           sinAnimar.delete(el)
-          gsap.set(el, { opacity: 1, y: 0, rotate: +el.dataset.rot! })
+          encoladas.add(el)
+          gsap.set(el, { opacity: 1, y: +el.dataset.dy!, scale: 1, rotate: +el.dataset.rot! })
         }
       }
     }
@@ -110,16 +138,20 @@ export default function Sedimento({ rng, onSelect }: Props) {
     return () => {
       clearTimeout(flush)
       io.disconnect()
+      pedir.disconnect()
       window.removeEventListener('scroll', onScroll)
     }
   }, [rng.seed])
 
-  const nudge = (el: HTMLElement, base: number) => {
+  // al pasar se acomoda distinto, pero siempre alrededor de su lugar (no se va
+  // corriendo de a poco hasta pisar a la de al lado)
+  const nudge = (el: HTMLElement, d: { rot: number; dx: number; dy: number }) => {
+    if (gsap.isTweening(el)) return
     gsap.to(el, {
-      rotate: base + rng.range(-5, 5),
-      x: `+=${rng.range(-6, 6)}`,
-      y: `+=${rng.range(-6, 6)}`,
-      duration: 0.5,
+      rotate: d.rot + rng.range(-3, 3),
+      x: d.dx + rng.range(-4, 4),
+      y: d.dy + rng.range(-6, 2),
+      duration: 0.6,
       ease: 'elastic.out(1, 0.5)',
     })
   }
@@ -178,24 +210,27 @@ export default function Sedimento({ rng, onSelect }: Props) {
                 return (
                   <figure
                     key={o.id}
-                    className={`sed-item flex max-h-[60vh] items-center justify-center ${d.span === 2 ? 'col-span-2 row-span-2' : ''}`}
-                    data-rot={d.rot}
-                    style={{
-                      transform: `rotate(${d.rot}deg) translate(${d.dx}px, ${d.dy}px)`,
-                      opacity: 0,
-                      aspectRatio: o.ratio,
-                    }}
-                    onPointerEnter={(e) => nudge(e.currentTarget, d.rot)}
+                    className={`sed-item max-h-[60vh] ${d.span === 2 ? 'col-span-2 row-span-2' : ''}`}
+                    style={{ aspectRatio: o.ratio }}
+                    onPointerEnter={(e) => nudge(e.currentTarget.firstElementChild as HTMLElement, d)}
                     onClick={() => onSelect(o)}
                   >
-                    <img
-                      src={src(o, 480)}
-                      srcSet={srcSet(o)}
-                      sizes={d.span === 2 ? '(min-width:1280px) 40vw, 50vw' : '(min-width:1280px) 20vw, (min-width:640px) 33vw, 50vw'}
-                      alt={o.title ?? `${t.obra} ${o.year}`}
-                      loading="lazy"
-                      className="h-full w-full object-contain"
-                    />
+                    {/* la celda queda quieta; lo que se tuerce y cae es esto de adentro */}
+                    <div
+                      className="sed-obra"
+                      data-rot={d.rot}
+                      data-dy={d.dy}
+                      style={{ transform: `translate(${d.dx}px, ${d.dy}px) rotate(${d.rot}deg)`, opacity: 0 }}
+                    >
+                      <img
+                        src={src(o, 480)}
+                        srcSet={srcSet(o)}
+                        sizes={d.span === 2 ? '(min-width:1280px) 40vw, 50vw' : '(min-width:1280px) 20vw, (min-width:640px) 33vw, 50vw'}
+                        alt={o.title ?? `${t.obra} ${o.year}`}
+                        loading="lazy"
+                        draggable={false}
+                      />
+                    </div>
                   </figure>
                 )
               })}
