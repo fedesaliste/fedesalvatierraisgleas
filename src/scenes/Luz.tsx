@@ -13,6 +13,9 @@ gsap.registerPlugin(ScrollTrigger)
 
 type Props = { rng: Rng; onSelect: (o: Obra) => void }
 
+/** cuánto de pantalla ocupa un metro de persona (el que sea más chico de los dos) */
+const PANTALLA_POR_METRO = { vh: 29, vw: 52 }
+
 /**
  * Cómo se hace. Una obra al azar cuenta el formato en cuatro pasos, al ritmo
  * del scroll: llega en fragmentos (recolectar), se arma a escala de mano
@@ -97,23 +100,22 @@ export default function Luz({ rng, onSelect }: Props) {
           dur: r.range(0.26, 0.4),
         })
       }
-    // el público: personas distintas, sin repetir, repartidas a lo ancho de la
-    // sala y escaladas por distancia (las del fondo, más chicas y más lavadas)
-    const elegidas = r.shuffle(GENTE).slice(0, r.int(6, 9))
-    const gente = elegidas
-      .map((p, i) => {
-        const lejos = r.next() // 0 adelante, 1 al fondo
-        const franja = 100 / elegidas.length
-        return {
-          ...p,
-          x: 1 + i * franja * 0.94 + r.range(0, franja * 0.5), // vw, repartidos
-          h: p.alto * (0.52 - lejos * 0.17), // fracción del alto de la pantalla
-          flip: r.chance(0.35),
-          lejos,
-          entra: r.range(0, 0.05), // cada uno entra a su tiempo
-        }
-      })
-      .sort((a, b) => b.lejos - a.lejos)
+    // el público: personajes distintos (de cada uno, una sola silueta), todos
+    // parados en la misma línea y a la misma escala, repartidos a lo ancho
+    const vistos = new Set<string>()
+    const unicos = r.shuffle(GENTE).filter((p) => !vistos.has(p.quien) && !!vistos.add(p.quien))
+    // entran los que caben parados uno al lado del otro: en una pantalla angosta
+    // son menos (y no más chicos: la escala es la misma para todos)
+    const metro = Math.min(innerHeight * PANTALLA_POR_METRO.vh, innerWidth * PANTALLA_POR_METRO.vw) / 100
+    const caben = Math.floor(innerWidth / (0.32 * 1.65 * metro * 0.9))
+    const elegidas = unicos.slice(0, Math.min(r.int(6, 8), Math.max(3, caben)))
+    const franja = 100 / elegidas.length
+    const gente = elegidas.map((p, i) => ({
+      ...p,
+      x: 1 + i * franja * 0.94 + r.range(0, franja * 0.5), // vw, repartidos
+      flip: r.chance(0.35),
+      entra: r.range(0, 0.05), // cada uno entra a su tiempo
+    }))
     const fotos = r.shuffle(sala).slice(0, 6)
     // la grilla de sala también se sortea: filas de una foto ancha o de dos
     // mitades, cada una con su proporción, y cada foto se destapa desde otro lado
@@ -341,10 +343,11 @@ export default function Luz({ rng, onSelect }: Props) {
                 className="luz-silueta absolute bottom-0 opacity-0"
                 style={{
                   left: `${g.x}vw`,
-                  height: `${g.h * 100}vh`,
+                  // escala única para todos: alto = metros reales × (pantalla por metro).
+                  // el min con vw evita que en el celular se amontonen
+                  height: `calc(${g.metros} * min(${PANTALLA_POR_METRO.vh}vh, ${PANTALLA_POR_METRO.vw}vw))`,
                   aspectRatio: String(g.ratio),
                   transform: `translateY(4%) ${g.flip ? 'scaleX(-1)' : ''}`,
-                  zIndex: Math.round((1 - g.lejos) * 10),
                 }}
               >
                 <img
@@ -352,11 +355,6 @@ export default function Luz({ rng, onSelect }: Props) {
                   alt=""
                   draggable={false}
                   className="h-full w-full select-none object-contain"
-                  style={{
-                    opacity: 1 - g.lejos * 0.3,
-                    // contraluz del proyector: si no, sobre la pared negra desaparecen
-                    filter: `drop-shadow(0 0 ${10 - g.lejos * 5}px rgba(255,244,220,${0.3 - g.lejos * 0.14}))`,
-                  }}
                 />
               </div>
             ))}
