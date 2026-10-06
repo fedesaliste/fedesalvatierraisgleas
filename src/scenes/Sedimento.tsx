@@ -3,6 +3,7 @@ import gsap from 'gsap'
 import { mulberry32, type Rng } from '../engine/random'
 import { obras, srcSet, src, years, type Obra } from '../lib/obras'
 import { useI18n } from '../i18n'
+import TextoAzar from '../components/TextoAzar'
 
 type Props = { rng: Rng; onSelect: (o: Obra) => void }
 
@@ -127,9 +128,14 @@ export default function Sedimento({ rng, onSelect }: Props) {
     <section ref={ref} className="relative z-10 min-h-screen bg-papel px-4 pb-32 pt-24 md:px-10">
       <header className="mb-16 border-b border-tinta/30 pb-4">
         <div className="flex items-end justify-between gap-6">
-          <h2 className="font-display text-[clamp(3rem,10vw,9rem)] leading-[0.85] uppercase">{t.sedimento}</h2>
+          <TextoAzar
+            as="h2"
+            texto={t.sedimento}
+            seed={rng.seed ^ 0x5ed}
+            className="font-display text-[clamp(3rem,10vw,9rem)] leading-[0.85] uppercase"
+          />
           <p className="text-[11px] uppercase tracking-wider opacity-70">
-            {t.sedimentoSub} · {obras.length} {t.obra}s
+            {t.sedimentoSub} · {obras.length} {t.obras}
           </p>
         </div>
         {/* todos los años con obra, de un vistazo: cada uno baja a su bloque */}

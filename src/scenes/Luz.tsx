@@ -7,6 +7,7 @@ import sala from '../data/sala.json'
 import { GENTE } from '../data/gente'
 import { DESTACADAS } from '../data/destacadas'
 import { useI18n } from '../i18n'
+import TextoAzar from '../components/TextoAzar'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -114,7 +115,21 @@ export default function Luz({ rng, onSelect }: Props) {
       })
       .sort((a, b) => b.lejos - a.lejos)
     const fotos = r.shuffle(sala).slice(0, 6)
-    return { obra, trozos, gente, fotos }
+    // la grilla de sala también se sortea: filas de una foto ancha o de dos
+    // mitades, cada una con su proporción, y cada foto se destapa desde otro lado
+    const forma: { ancha: boolean; aspecto: string }[] = []
+    while (forma.length < fotos.length) {
+      if (forma.length === fotos.length - 1 || r.chance(0.35)) {
+        forma.push({ ancha: true, aspecto: r.pick(['16/9', '21/9', '2/1']) })
+      } else {
+        const aspecto = r.pick(['4/3', '3/4', '1/1', '5/4'])
+        forma.push({ ancha: false, aspecto }, { ancha: false, aspecto })
+      }
+    }
+    const destape = fotos.map(() =>
+      r.pick(['inset(0% 100% 0% 0%)', 'inset(0% 0% 0% 100%)', 'inset(0% 0% 100% 0%)', 'inset(100% 0% 0% 0%)', 'inset(50% 50% 50% 50%)']),
+    )
+    return { obra, trozos, gente, fotos, forma, destape }
   }, [rng.seed])
 
   useEffect(() => {
@@ -202,7 +217,33 @@ export default function Luz({ rng, onSelect }: Props) {
     return () => ctx.revert()
   }, [escena, lang])
 
-  const { obra, trozos, gente, fotos } = escena
+  // en sala: cada foto se destapa cuando llega, desde el lado que le tocó
+  useEffect(() => {
+    const figs = [...document.querySelectorAll<HTMLElement>('.luz-foto')]
+    const r = mulberry32(rng.seed ^ 0x5a1a)
+    gsap.set(figs, { clipPath: (i: number) => escena.destape[i] })
+    const io = new IntersectionObserver(
+      (es) => {
+        for (const e of es) {
+          if (!e.isIntersecting) continue
+          io.unobserve(e.target)
+          const fig = e.target as HTMLElement
+          const dur = r.range(1, 1.6)
+          gsap.to(fig, { clipPath: 'inset(0% 0% 0% 0%)', duration: dur, ease: 'power4.inOut' })
+          gsap.fromTo(fig.querySelector('img'), { scale: r.range(1.2, 1.45), rotate: r.range(-4, 4) }, { scale: 1, rotate: 0, duration: dur + 0.4, ease: 'power3.out', clearProps: 'transform' })
+        }
+      },
+      { rootMargin: '0px 0px -12% 0px' },
+    )
+    figs.forEach((f) => io.observe(f))
+    return () => {
+      io.disconnect()
+      gsap.killTweensOf(figs)
+      gsap.set(figs, { clearProps: 'clipPath' })
+    }
+  }, [escena, rng.seed])
+
+  const { obra, trozos, gente, fotos, forma } = escena
   // la versión grande: proyectada llega a ocupar casi toda la pantalla
   const cara = src(obra, 1920)
 
@@ -327,14 +368,20 @@ export default function Luz({ rng, onSelect }: Props) {
           una forma posible de verlo. el orden y cuáles entran, al azar */}
       <section className="relative z-10 bg-[#080706] px-2 pb-24 pt-24 text-papel md:px-4">
         <header className="mb-10 flex flex-col gap-3 px-2 md:flex-row md:items-end md:justify-between md:px-6">
-          <h2 className="font-display text-[clamp(2.4rem,7vw,6rem)] uppercase leading-[0.9]">{t.luz.registro}</h2>
+          <TextoAzar
+            as="h2"
+            texto={t.luz.registro}
+            seed={rng.seed ^ 0x5a1}
+            className="font-display text-[clamp(2.4rem,7vw,6rem)] uppercase leading-[0.9]"
+          />
           <p className="max-w-sm text-[11px] uppercase tracking-wider opacity-60 md:text-right">{t.luz.registroSub}</p>
         </header>
         <div className="grid grid-cols-2 gap-2 md:gap-3">
           {fotos.map((f, i) => (
             <figure
               key={f.file}
-              className={`luz-foto relative overflow-hidden ${i % 3 === 0 ? 'col-span-2 aspect-[16/9]' : 'aspect-[4/3]'}`}
+              className={`luz-foto relative overflow-hidden ${forma[i].ancha ? 'col-span-2' : ''}`}
+              style={{ aspectRatio: forma[i].aspecto }}
             >
               <img
                 src={`/sala/${f.file}`}

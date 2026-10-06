@@ -1,14 +1,21 @@
 import type { Rng } from '../engine/random'
 import { useI18n } from '../i18n'
 import { BIO } from '../data/manifiesto'
+import TextoAzar from '../components/TextoAzar'
 
-export default function Bio({ rng }: { rng: Rng }) {
+export default function Bio({ rng, repetir }: { rng: Rng; repetir: string }) {
   const { t } = useI18n()
   return (
     <section className="relative z-10 flex min-h-[70vh] flex-col justify-between bg-papel px-4 py-24 md:px-10">
       <div className="grid gap-10 md:grid-cols-2">
         <div>
-          <h2 className="font-display text-[clamp(2.4rem,7vw,6rem)] uppercase leading-[0.9]">{BIO.nombre}</h2>
+          <TextoAzar
+            as="h2"
+            texto={BIO.nombre}
+            seed={rng.seed ^ 0xb10}
+            vivo
+            className="font-display text-[clamp(2.4rem,7vw,6rem)] uppercase leading-[0.9]"
+          />
           <p className="mt-3 text-[11px] uppercase tracking-wider opacity-70">
             {t.roles} · {t.rotulo} · {t.origen}
           </p>
@@ -25,7 +32,7 @@ export default function Bio({ rng }: { rng: Rng }) {
       </div>
       <footer className="mt-24 flex flex-wrap items-end justify-between gap-4 border-t border-tinta/30 pt-4 text-[11px] uppercase tracking-wider opacity-70">
         <span>
-          {t.creditos} <a className="underline" href={`?seed=${rng.seed}`}>#{rng.seed.toString(36)}</a>
+          {t.creditos} <a className="underline" href={repetir}>#{rng.seed.toString(36)}</a>
         </span>
         <span>© {new Date().getFullYear()} · {t.rotulo}</span>
       </footer>

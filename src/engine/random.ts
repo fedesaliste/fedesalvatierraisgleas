@@ -42,8 +42,15 @@ export function mulberry32(seed: number): Rng {
 export function seedFromUrl(): number {
   const p = new URLSearchParams(location.search).get('seed')
   if (p && /^\d+$/.test(p)) return +p
-  return (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0
+  return semillaNueva()
 }
 
 /** paleta sacada de las obras: rojo, amarillo, verde, azul, violeta, naranja */
 export const ACENTOS = ['#d0281e', '#e3b91c', '#3aa64a', '#2f6fd6', '#7a3fb5', '#e0641c'] as const
+
+/** el soporte tampoco es siempre el mismo: hueso, crema, gris frío, kraft claro, papel viejo */
+export const PAPELES = ['#efece4', '#f1e9da', '#e8e7e2', '#ece4d2', '#f2eee6'] as const
+export const TINTAS = ['#141210', '#17130e', '#0f1215', '#1a1311'] as const
+
+/** una semilla nueva, cualquiera */
+export const semillaNueva = () => (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0

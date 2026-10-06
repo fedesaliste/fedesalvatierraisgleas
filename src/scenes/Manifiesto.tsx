@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { mulberry32, type Rng } from '../engine/random'
@@ -10,6 +10,30 @@ gsap.registerPlugin(ScrollTrigger)
 export default function Manifiesto({ rng }: { rng: Rng }) {
   const ref = useRef<HTMLElement>(null)
   const { t, lang } = useI18n()
+
+  // la puesta también es azar: sangría, alineación, inclinación y qué línea se lleva el acento
+  const n = t.statement.length
+  const puesta = useMemo(() => {
+    const r = mulberry32(rng.seed ^ 0x3a20)
+    return {
+      acento: r.int(0, n - 1),
+      lineas: Array.from({ length: n }, () => ({
+        sangria: r.pick([0, 0, r.range(6, 20), r.range(20, 36)]),
+        derecha: r.chance(0.2),
+        giro: r.range(-1.6, 1.6),
+      })),
+    }
+  }, [rng.seed, n])
+
+  // al pasar, la palabra se sobresalta
+  const saltar = (el: HTMLElement) => {
+    if (gsap.isTweening(el)) return
+    gsap.fromTo(
+      el,
+      { y: gsap.utils.random(-28, -10), rotate: gsap.utils.random(-14, 14) },
+      { y: 0, rotate: 0, duration: 0.8, ease: 'elastic.out(1, 0.35)' },
+    )
+  }
 
   useEffect(() => {
     const root = ref.current!
@@ -52,13 +76,17 @@ export default function Manifiesto({ rng }: { rng: Rng }) {
         {t.statement.map((linea, i) => (
           <p
             key={i}
-            className={`linea font-display uppercase leading-[0.95] ${
+            className={`linea font-display uppercase leading-[0.95] md:ml-[var(--sangria)] ${
               i === 0 ? 'text-[clamp(2.6rem,8vw,7.5rem)]' : 'text-[clamp(1.5rem,4vw,3.6rem)]'
-            }`}
-            style={i === 0 ? { color: 'var(--acento)' } : undefined}
+            } ${puesta.lineas[i].derecha ? 'md:text-right' : ''}`}
+            style={{
+              color: i === puesta.acento ? 'var(--acento)' : undefined,
+              rotate: `${puesta.lineas[i].giro}deg`,
+              ['--sangria' as string]: `${puesta.lineas[i].sangria}%`,
+            }}
           >
             {split(linea).map((w, j) => (
-              <span key={j} className="palabra">
+              <span key={j} className="palabra" onPointerEnter={(e) => saltar(e.currentTarget)}>
                 {w}
                 {lang === 'ja' ? '' : ' '}
               </span>

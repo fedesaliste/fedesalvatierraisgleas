@@ -13,6 +13,7 @@ export type Dict = {
   scrollHint: string
   sinTitulo: string
   obra: string
+  obras: string
   cerrar: string
   sedimento: string
   sedimentoSub: string
@@ -47,6 +48,7 @@ export const dict: Record<Lang, Dict> = {
     scrollHint: 'scrolleá para sacudir',
     sinTitulo: 'sin título',
     obra: 'obra',
+    obras: 'obras',
     cerrar: 'cerrar',
     sedimento: 'sedimento',
     sedimentoSub: 'lo que quedó',
@@ -101,6 +103,7 @@ export const dict: Record<Lang, Dict> = {
     scrollHint: 'scroll to shake',
     sinTitulo: 'untitled',
     obra: 'work',
+    obras: 'works',
     cerrar: 'close',
     sedimento: 'sediment',
     sedimentoSub: 'what remained',
@@ -155,6 +158,7 @@ export const dict: Record<Lang, Dict> = {
     scrollHint: 'scorri per scuotere',
     sinTitulo: 'senza titolo',
     obra: 'opera',
+    obras: 'opere',
     cerrar: 'chiudi',
     sedimento: 'sedimento',
     sedimentoSub: 'ciò che è rimasto',
@@ -209,6 +213,7 @@ export const dict: Record<Lang, Dict> = {
     scrollHint: 'scrolle pour secouer',
     sinTitulo: 'sans titre',
     obra: 'œuvre',
+    obras: 'œuvres',
     cerrar: 'fermer',
     sedimento: 'sédiment',
     sedimentoSub: 'ce qui est resté',
@@ -263,6 +268,7 @@ export const dict: Record<Lang, Dict> = {
     scrollHint: 'スクロールして揺らす',
     sinTitulo: '無題',
     obra: '作品',
+    obras: '作品',
     cerrar: '閉じる',
     sedimento: '堆積',
     sedimentoSub: '残ったもの',

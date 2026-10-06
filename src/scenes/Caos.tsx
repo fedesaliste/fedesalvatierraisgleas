@@ -4,7 +4,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { crearCaos, type Caos as CaosEngine } from '../engine/caos'
 import type { Rng } from '../engine/random'
 import { obras, type Obra } from '../lib/obras'
-import { useI18n } from '../i18n'
+import { LANGS, useI18n, type Lang } from '../i18n'
+import { dict } from '../i18n/dict'
 import BotonAzar from '../components/BotonAzar'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -22,10 +23,10 @@ export default function Caos({ rng, onSelect, onOtroAzar, trigger }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const botonRef = useRef<HTMLButtonElement>(null)
   const fragRef = useRef<HTMLDivElement>(null)
-  const [frag, setFrag] = useState<string | null>(null)
-  const { t } = useI18n()
-  const fragsRef = useRef(t.fragmentos)
-  fragsRef.current = t.fragmentos
+  const [frag, setFrag] = useState<{ texto: string; lang: Lang } | null>(null)
+  const { t, lang } = useI18n()
+  const langRef = useRef(lang)
+  langRef.current = lang
   const activo = useRef(true)
   const botonBody = useRef<{ caos: CaosEngine; body: import('matter-js').Body } | null>(null)
 
@@ -79,7 +80,11 @@ export default function Caos({ rng, onSelect, onOtroAzar, trigger }: Props) {
         else if (r < 0.6) caos.impulso()
         else if (r < 0.72) caos.retirar()
         else if (r < 0.78) caos.vuelco()
-        else if (r < 0.9) setFrag(rng.pick(fragsRef.current))
+        else if (r < 0.9) {
+          // los fragmentos se escapan en cualquier idioma, no solo el de la página
+          const l = rng.chance(0.55) ? langRef.current : rng.pick(LANGS)
+          setFrag({ texto: rng.pick(dict[l].fragmentos), lang: l })
+        }
         else caos.irrumpir()
       }
       timers.push(window.setTimeout(mutar, rng.range(1800, 5000)))
@@ -162,10 +167,11 @@ export default function Caos({ rng, onSelect, onOtroAzar, trigger }: Props) {
       {frag && (
         <div
           ref={fragRef}
+          lang={frag.lang}
           className="pointer-events-none absolute z-[5000] max-w-[70vw] font-display text-[clamp(1.6rem,5vw,4.5rem)] leading-[0.95] uppercase"
           style={{ color: 'var(--acento)', mixBlendMode: 'multiply' }}
         >
-          {frag}
+          {frag.texto}
         </div>
       )}
     </div>
