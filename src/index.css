@@ -62,14 +62,20 @@ body {
 }
 
 /* sedimento: cada obra aterrizó un poco torcida. la celda tiene un margen
-   interno que alcanza para el giro (±4.5°) y el corrimiento: así ninguna pisa
+   interno que alcanza para el giro (±3.5°) y el corrimiento: así ninguna pisa
    a la de al lado, ni al caer ni al acomodarse con el mouse */
 .sed-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 5%;
-  cursor: pointer;
+  padding: 3.5%;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sed-item.arrastrando {
+  cursor: grabbing;
+  z-index: 15;
 }
 .sed-obra {
   width: 100%;

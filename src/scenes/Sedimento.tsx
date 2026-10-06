@@ -3,6 +3,7 @@ import gsap from 'gsap'
 import { mulberry32, type Rng } from '../engine/random'
 import { obras, srcSet, src, years, type Obra } from '../lib/obras'
 import { useI18n } from '../i18n'
+import { arrastrable } from '../engine/empujes'
 import TextoAzar from '../components/TextoAzar'
 
 type Props = { rng: Rng; onSelect: (o: Obra) => void }
@@ -24,9 +25,9 @@ export default function Sedimento({ rng, onSelect }: Props) {
       obras.map((o) => [
         o.id,
         {
-          rot: r.range(-4.5, 4.5),
-          dx: r.range(-6, 6),
-          dy: r.range(-8, 8),
+          rot: r.range(-3.5, 3.5),
+          dx: r.range(-4, 4),
+          dy: r.range(-5, 5),
           span: r.chance(0.14) ? 2 : 1,
           orden: r.next(),
         },
@@ -60,7 +61,16 @@ export default function Sedimento({ rng, onSelect }: Props) {
         gsap.fromTo(
           el,
           { y: dy - r.range(60, 110), rotate: rot + r.range(-12, 12), scale: 0.96 },
-          { y: dy, rotate: rot, scale: 1, duration: r.range(1.1, 1.5), ease: 'expo.out', delay: at },
+          {
+            y: dy,
+            rotate: rot,
+            scale: 1,
+            duration: r.range(1.1, 1.5),
+            ease: 'expo.out',
+            delay: at,
+            // recién cuando aterrizó se la puede agarrar
+            onComplete: () => void (el.dataset.cayo = '1'),
+          },
         )
         gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.45, ease: 'power1.out', delay: at })
       })
@@ -130,12 +140,15 @@ export default function Sedimento({ rng, onSelect }: Props) {
           io.unobserve(el.parentElement!)
           sinAnimar.delete(el)
           encoladas.add(el)
+          el.dataset.cayo = '1'
           gsap.set(el, { opacity: 1, y: +el.dataset.dy!, scale: 1, rotate: +el.dataset.rot! })
         }
       }
     }
     window.addEventListener('scroll', onScroll, { passive: true })
+    const soltarArrastre = arrastrable(root)
     return () => {
+      soltarArrastre()
       clearTimeout(flush)
       io.disconnect()
       pedir.disconnect()
@@ -146,7 +159,8 @@ export default function Sedimento({ rng, onSelect }: Props) {
   // al pasar se acomoda distinto, pero siempre alrededor de su lugar (no se va
   // corriendo de a poco hasta pisar a la de al lado)
   const nudge = (el: HTMLElement, d: { rot: number; dx: number; dy: number }) => {
-    if (gsap.isTweening(el)) return
+    // si ya la movieron a mano (o la chocaron), se queda donde quedó
+    if (gsap.isTweening(el) || el.dataset.movida || el.dataset.cayo !== '1') return
     gsap.to(el, {
       rotate: d.rot + rng.range(-3, 3),
       x: d.dx + rng.range(-4, 4),
@@ -204,15 +218,15 @@ export default function Sedimento({ rng, onSelect }: Props) {
               </span>
               <span className="text-[11px] uppercase tracking-wider opacity-60">{lista.length}</span>
             </div>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-14 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="sed-grilla grid grid-flow-dense grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 xl:grid-cols-4">
               {lista.map((o) => {
                 const d = desorden.get(o.id)!
                 return (
                   <figure
                     key={o.id}
-                    className={`sed-item max-h-[60vh] ${d.span === 2 ? 'col-span-2 row-span-2' : ''}`}
+                    className={`sed-item max-h-[75vh] ${d.span === 2 ? 'col-span-2 row-span-2' : ''}`}
                     style={{ aspectRatio: o.ratio }}
-                    onPointerEnter={(e) => nudge(e.currentTarget.firstElementChild as HTMLElement, d)}
+                    onPointerEnter={(e) => e.pointerType === 'mouse' && nudge(e.currentTarget.firstElementChild as HTMLElement, d)}
                     onClick={() => onSelect(o)}
                   >
                     {/* la celda queda quieta; lo que se tuerce y cae es esto de adentro */}
@@ -220,12 +234,13 @@ export default function Sedimento({ rng, onSelect }: Props) {
                       className="sed-obra"
                       data-rot={d.rot}
                       data-dy={d.dy}
+                      data-ratio={o.ratio}
                       style={{ transform: `translate(${d.dx}px, ${d.dy}px) rotate(${d.rot}deg)`, opacity: 0 }}
                     >
                       <img
                         src={src(o, 480)}
                         srcSet={srcSet(o)}
-                        sizes={d.span === 2 ? '(min-width:1280px) 40vw, 50vw' : '(min-width:1280px) 20vw, (min-width:640px) 33vw, 50vw'}
+                        sizes={d.span === 2 ? '(min-width:1280px) 50vw, (min-width:640px) 66vw, 100vw' : '(min-width:1280px) 25vw, (min-width:640px) 33vw, 50vw'}
                         alt={o.title ?? `${t.obra} ${o.year}`}
                         loading="lazy"
                         draggable={false}
