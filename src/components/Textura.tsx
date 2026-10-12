@@ -4,7 +4,7 @@ import { mulberry32 } from '../engine/random'
 /**
  * Nada es plano: todo el sitio está impreso sobre algo. Siempre hay grano
  * (vivo, como película) y encima una o dos capas más que salen de la semilla:
- * fibras de papel, trama de imprenta, manchas, cuadrícula, pliegues.
+ * trama de imprenta o manchas.
  */
 
 type Capa = { estilo: CSSProperties }
@@ -34,7 +34,7 @@ const manchas = (freq: number, seed: number, hex: string, w: number) => {
   )
 }
 
-const EXTRAS = ['fibras', 'trama', 'manchas', 'cuadricula', 'pliegues'] as const
+const EXTRAS = ['trama', 'manchas'] as const
 
 function capas(seed: number, acento: string): { grano: string; extras: Capa[]; nombres: string[] } {
   const r = mulberry32(seed ^ 0x7e57)
@@ -42,18 +42,6 @@ function capas(seed: number, acento: string): { grano: string; extras: Capa[]; n
   const nombres = r.shuffle(EXTRAS).slice(0, r.chance(0.4) ? 2 : 1)
   const extras = nombres.map((n): Capa => {
     switch (n) {
-      case 'fibras': {
-        const largo = r.range(0.004, 0.009).toFixed(4)
-        const fino = r.range(0.16, 0.36).toFixed(3)
-        const horizontal = r.chance(0.6)
-        return {
-          estilo: {
-            backgroundImage: ruido(horizontal ? `${largo} ${fino}` : `${fino} ${largo}`, 4, r.int(1, 999), 2.6, 640),
-            mixBlendMode: 'overlay',
-            opacity: r.range(0.35, 0.6),
-          },
-        }
-      }
       case 'trama': {
         const s = r.range(5, 9)
         const p = r.range(0.7, 1.2)
@@ -76,32 +64,6 @@ function capas(seed: number, acento: string): { grano: string; extras: Capa[]; n
             opacity: r.range(0.07, 0.13),
           },
         }
-      case 'cuadricula': {
-        const s = r.int(22, 48)
-        const linea = `color-mix(in srgb, ${acento} 45%, transparent)`
-        return {
-          estilo: {
-            backgroundImage: `linear-gradient(${linea} 1px, transparent 1px), linear-gradient(90deg, ${linea} 1px, transparent 1px)`,
-            backgroundSize: `${s}px ${s}px`,
-            backgroundPosition: `${r.int(0, s)}px ${r.int(0, s)}px`,
-            opacity: r.range(0.1, 0.18),
-          },
-        }
-      }
-      case 'pliegues': {
-        // dobleces: una arista de luz y sombra que cruza en diagonal cada tanto
-        const ang = r.range(20, 160)
-        const alto = r.range(90, 160)
-        const at = r.range(30, 70)
-        return {
-          estilo: {
-            backgroundImage: `linear-gradient(${ang}deg, transparent ${at - 9}%, rgb(0 0 0 / 0.35) ${at}%, rgb(255 255 255 / 0.5) ${at + 0.4}%, transparent ${at + 14}%)`,
-            backgroundSize: `100% ${alto}vh`,
-            mixBlendMode: 'overlay',
-            opacity: r.range(0.25, 0.45),
-          },
-        }
-      }
     }
   })
   return { grano, extras, nombres }
