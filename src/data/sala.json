@@ -1,50 +1,47 @@
 [
   {
-    "file": "sala-p03_0.webp",
-    "year": 2025,
-    "w": 1184,
-    "h": 864
+    "file": "sala-01.webp",
+    "w": 1920,
+    "h": 1072
   },
   {
-    "file": "sala-p04_0.webp",
-    "year": 2025,
-    "w": 1184,
-    "h": 864
+    "file": "sala-02.webp",
+    "w": 1920,
+    "h": 1072
   },
   {
-    "file": "sala-p07_0.webp",
-    "year": 2025,
-    "w": 1184,
-    "h": 864
+    "file": "sala-03.webp",
+    "w": 1920,
+    "h": 1072
   },
   {
-    "file": "sala-p10_0.webp",
-    "year": 2021,
-    "w": 1184,
-    "h": 864
+    "file": "sala-04.webp",
+    "w": 1920,
+    "h": 1072
   },
   {
-    "file": "sala-p12_0.webp",
-    "year": 2020,
-    "w": 1184,
-    "h": 864
+    "file": "sala-05.webp",
+    "w": 1920,
+    "h": 1072
   },
   {
-    "file": "sala-p13_0.webp",
-    "year": 2019,
-    "w": 1184,
-    "h": 864
+    "file": "sala-06.webp",
+    "w": 1920,
+    "h": 1072
   },
   {
-    "file": "sala-p14_0.webp",
-    "year": 2018,
-    "w": 1184,
-    "h": 864
+    "file": "sala-07.webp",
+    "w": 1920,
+    "h": 1072
   },
   {
-    "file": "sala-p03_1.webp",
-    "year": 2025,
-    "w": 1184,
-    "h": 864
+    "file": "sala-08.webp",
+    "w": 1920,
+    "h": 1072
+  },
+  {
+    "file": "sala-09.webp",
+    "w": 1920,
+    "h": 1072
   }
 ]
