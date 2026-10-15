@@ -2,6 +2,7 @@ import type { Rng } from '../engine/random'
 import { useI18n } from '../i18n'
 import { BIO } from '../data/manifiesto'
 import TextoAzar from '../components/TextoAzar'
+import Contador from '../components/Contador'
 
 export default function Bio({ rng, repetir }: { rng: Rng; repetir: string }) {
   const { t } = useI18n()
@@ -30,6 +31,7 @@ export default function Bio({ rng, repetir }: { rng: Rng; repetir: string }) {
           </p>
         </div>
       </div>
+      <Contador seed={rng.seed} />
       <footer className="mt-24 flex flex-wrap items-end justify-between gap-4 border-t border-tinta/30 pt-4 text-[11px] uppercase tracking-wider opacity-70">
         <span>
           {t.creditos} <a className="underline" href={repetir}>#{rng.seed.toString(36)}</a>

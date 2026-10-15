@@ -17,6 +17,12 @@ export type Dict = {
   cerrar: string
   /** debajo de la descripción al azar de una obra */
   miradaNota: string
+  /** contador de la bio; {n} es el número */
+  visitas: string
+  visitasUna: string
+  masPaises: string
+  masPaisUno: string
+  paisDesconocido: string
   sedimento: string
   sedimentoSub: string
   manifiesto: string
@@ -53,6 +59,11 @@ export const dict: Record<Lang, Dict> = {
     obras: 'obras',
     cerrar: 'cerrar',
     miradaNota: 'descripción al azar · cada vez que la abrís dice otra cosa',
+    visitas: '{n} personas pasaron por acá sin pedir permiso',
+    visitasUna: 'una persona pasó por acá sin pedir permiso',
+    masPaises: 'y {n} países más',
+    masPaisUno: 'y un país más',
+    paisDesconocido: 'algún lugar',
     sedimento: 'sedimento',
     sedimentoSub: 'lo que quedó',
     manifiesto: 'manifiesto',
@@ -109,6 +120,11 @@ export const dict: Record<Lang, Dict> = {
     obras: 'works',
     cerrar: 'close',
     miradaNota: 'random description · it says something else every time you open it',
+    visitas: '{n} people passed through here without asking permission',
+    visitasUna: 'one person passed through here without asking permission',
+    masPaises: 'and {n} more countries',
+    masPaisUno: 'and one more country',
+    paisDesconocido: 'somewhere',
     sedimento: 'sediment',
     sedimentoSub: 'what remained',
     manifiesto: 'manifesto',
@@ -165,6 +181,11 @@ export const dict: Record<Lang, Dict> = {
     obras: 'opere',
     cerrar: 'chiudi',
     miradaNota: 'descrizione a caso · ogni volta che la apri dice altro',
+    visitas: '{n} persone sono passate di qui senza chiedere permesso',
+    visitasUna: 'una persona è passata di qui senza chiedere permesso',
+    masPaises: 'e altri {n} paesi',
+    masPaisUno: 'e un altro paese',
+    paisDesconocido: 'da qualche parte',
     sedimento: 'sedimento',
     sedimentoSub: 'ciò che è rimasto',
     manifiesto: 'manifesto',
@@ -221,6 +242,11 @@ export const dict: Record<Lang, Dict> = {
     obras: 'œuvres',
     cerrar: 'fermer',
     miradaNota: 'description au hasard · elle dit autre chose à chaque fois',
+    visitas: '{n} personnes sont passées par ici sans demander la permission',
+    visitasUna: 'une personne est passée par ici sans demander la permission',
+    masPaises: 'et {n} autres pays',
+    masPaisUno: 'et un autre pays',
+    paisDesconocido: 'quelque part',
     sedimento: 'sédiment',
     sedimentoSub: 'ce qui est resté',
     manifiesto: 'manifeste',
@@ -277,6 +303,11 @@ export const dict: Record<Lang, Dict> = {
     obras: '作品',
     cerrar: '閉じる',
     miradaNota: 'でたらめな説明・開くたびに違うことを言う',
+    visitas: '{n}人が許可なくここを通った',
+    visitasUna: 'ひとりが許可なくここを通った',
+    masPaises: 'ほか{n}か国',
+    masPaisUno: 'ほか1か国',
+    paisDesconocido: 'どこか',
     sedimento: '堆積',
     sedimentoSub: '残ったもの',
     manifiesto: 'マニフェスト',
