@@ -1,11 +1,50 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import type { Obra } from '../lib/obras'
 import { useI18n } from '../i18n'
+import { mirar } from '../lib/mirada'
+
+const GLIFOS = '#*%&@/+=~<>?!'
 
 export default function Detalle({ obra, onClose }: { obra: Obra; onClose: () => void }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const img = useRef<HTMLImageElement>(null)
+  const texto = useRef<HTMLSpanElement>(null)
+  const [escrita, setEscrita] = useState(false)
+  // cada vez que se abre, alguien la mira de nuevo y dice otra cosa. se escribe
+  // de a una letra, con un glifo que tantea en la punta antes de asentarse
+  useEffect(() => {
+    const el = texto.current!
+    el.textContent = ''
+    setEscrita(false)
+    let vivo = true
+    let id = 0
+    mirar(obra.id, lang).then((frase) => {
+      if (!vivo || !frase) return
+      const letras = [...frase]
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        el.textContent = frase
+        setEscrita(true)
+        return
+      }
+      let i = 0
+      const paso = () => {
+        if (!vivo) return
+        i++
+        const punta = i < letras.length ? GLIFOS[Math.floor(Math.random() * GLIFOS.length)] : ''
+        el.textContent = letras.slice(0, i).join('') + punta
+        if (i < letras.length)
+          id = window.setTimeout(paso, letras[i - 1] === '.' || letras[i - 1] === '。' ? 260 : 28 + Math.random() * 40)
+        else setEscrita(true)
+      }
+      // espera a que la obra termine de llegar
+      id = window.setTimeout(paso, 550)
+    })
+    return () => {
+      vivo = false
+      clearTimeout(id)
+    }
+  }, [obra.id, lang])
   // cada vez que se abre, la obra llega de otro lado y se endereza
   useEffect(() => {
     const a = Math.random() * Math.PI * 2
@@ -35,13 +74,24 @@ export default function Detalle({ obra, onClose }: { obra: Obra; onClose: () => 
       onClick={onClose}
       role="dialog"
     >
-      <img
-        ref={img}
-        src={`/obras/${obra.year}/${obra.id}-${obra.sizes[obra.sizes.length - 1]}.webp`}
-        alt={obra.title ?? `${t.obra} ${obra.year}`}
-        draggable={false}
-        className="protegida max-h-[85vh] max-w-[90vw] object-contain drop-shadow-2xl"
-      />
+      <figure className="flex max-w-[90vw] flex-col items-center gap-5">
+        <img
+          ref={img}
+          src={`/obras/${obra.year}/${obra.id}-${obra.sizes[obra.sizes.length - 1]}.webp`}
+          alt={obra.title ?? `${t.obra} ${obra.year}`}
+          draggable={false}
+          className="protegida max-h-[68vh] max-w-[90vw] object-contain drop-shadow-2xl"
+        />
+        <figcaption className="flex min-h-[5.5em] max-w-xl flex-col items-center gap-2 text-center">
+          <span ref={texto} className="text-[15px] leading-snug md:text-base" />
+          <span
+            className="text-[10px] uppercase tracking-wider transition-opacity duration-700"
+            style={{ opacity: escrita ? 0.55 : 0 }}
+          >
+            {t.miradaNota}
+          </span>
+        </figcaption>
+      </figure>
       <p className="absolute bottom-5 left-6 text-[11px] uppercase tracking-wider">
         {obra.title ?? t.sinTitulo} · {obra.year}
         {obra.technique ? ` · ${obra.technique}` : ''}

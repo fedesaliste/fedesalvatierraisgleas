@@ -15,6 +15,8 @@ export type Dict = {
   obra: string
   obras: string
   cerrar: string
+  /** debajo de la descripción al azar de una obra */
+  miradaNota: string
   sedimento: string
   sedimentoSub: string
   manifiesto: string
@@ -50,6 +52,7 @@ export const dict: Record<Lang, Dict> = {
     obra: 'obra',
     obras: 'obras',
     cerrar: 'cerrar',
+    miradaNota: 'descripción al azar · cada vez que la abrís dice otra cosa',
     sedimento: 'sedimento',
     sedimentoSub: 'lo que quedó',
     manifiesto: 'manifiesto',
@@ -105,6 +108,7 @@ export const dict: Record<Lang, Dict> = {
     obra: 'work',
     obras: 'works',
     cerrar: 'close',
+    miradaNota: 'random description · it says something else every time you open it',
     sedimento: 'sediment',
     sedimentoSub: 'what remained',
     manifiesto: 'manifesto',
@@ -160,6 +164,7 @@ export const dict: Record<Lang, Dict> = {
     obra: 'opera',
     obras: 'opere',
     cerrar: 'chiudi',
+    miradaNota: 'descrizione a caso · ogni volta che la apri dice altro',
     sedimento: 'sedimento',
     sedimentoSub: 'ciò che è rimasto',
     manifiesto: 'manifesto',
@@ -215,6 +220,7 @@ export const dict: Record<Lang, Dict> = {
     obra: 'œuvre',
     obras: 'œuvres',
     cerrar: 'fermer',
+    miradaNota: 'description au hasard · elle dit autre chose à chaque fois',
     sedimento: 'sédiment',
     sedimentoSub: 'ce qui est resté',
     manifiesto: 'manifeste',
@@ -270,6 +276,7 @@ export const dict: Record<Lang, Dict> = {
     obra: '作品',
     obras: '作品',
     cerrar: '閉じる',
+    miradaNota: 'でたらめな説明・開くたびに違うことを言う',
     sedimento: '堆積',
     sedimentoSub: '残ったもの',
     manifiesto: 'マニフェスト',
